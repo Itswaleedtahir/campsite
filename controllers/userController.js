@@ -1,0 +1,331 @@
+let User = require("../models/userModel");
+let bcrypt = require("bcrypt");
+const crypto = require('crypto');
+let utils = require("../utils/index");
+const services = require("../helpers/services");
+const randomstring = require("randomstring");
+let methods = {
+  addUser: async (req, res) => {
+    try {
+      let data = req.body;
+      if (!data) {
+        return res.status(400).json({
+          msg: "Please provide user data",
+          success: false,
+        });
+      }
+
+      let userData = await User.findOne({ email: data.email });
+      if (userData) {
+        return res.status(404).json({
+          msg: "User already exist",
+          success: false,
+        });
+      }
+  
+      // Generate a 4-digit OTP
+      const otp = crypto.randomInt(1000, 9999);
+  
+      // Hash the password
+      data.password = await bcrypt.hash(data.password, 10);
+  
+      // Add the OTP to the user data
+      data.otp = otp;
+  
+      let user = new User(data);
+      let addUser = await user.save();
+      if (!addUser) {
+        return res.status(500).json({
+          msg: "Failed to add user",
+          success: false,
+        });
+      }
+  
+      // Send the OTP email
+      await services.sendVerificationEmail(data.email, otp, res);
+  
+      res.status(200).json({
+        user: addUser,
+        msg: "Otp sent to ur email",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Failed to add user",
+        error: error.message || "Something went wrong.",
+        success: false,
+      });
+    }
+  },
+  verifyUser: async (req, res) => {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return res.status(400).json({
+          msg: "Please provide both email and OTP",
+          success: false,
+        });
+      }
+  
+      // Find the user by email
+      let user = await User.findOne({ email: email });
+      if (!user) {
+        return res.status(404).json({
+          msg: "User not found",
+          success: false,
+        });
+      }
+  
+      // Check if the OTP matches
+      if (user.otp !== otp) {
+        return res.status(401).json({
+          msg: "Invalid OTP",
+          success: false,
+        });
+      }
+  
+      // Verify the user and update isVerified to true
+      user.isVerified = true;
+      user.otp = null; // Clear the OTP field after successful verification
+  
+      await user.save();
+  
+      res.status(200).json({
+        msg: "User verified successfully",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Failed to verify user",
+        error: error.message || "Something went wrong.",
+        success: false,
+      });
+    }
+  },
+  loginUser: async (req, res) => {
+    try {
+      let data = req.body;
+      let email = data.email;
+      let password = data.password;
+      if (!email || !password) {
+        return res.status(401).json({
+          msg: "Please enter right Credentials!",
+          success: false,
+        });
+      }
+      let user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          msg: "User with this email does not exist",
+          success: false,
+        });
+      }
+  
+      // Check if the user is verified
+      if (!user.isVerified) {
+        return res.status(403).json({
+          msg: "Please verify your email to login",
+          success: false,
+        });
+      }
+  
+      let match = await utils.comparePassword(password, user.password);
+      if (!match) {
+        return res.status(401).json({
+          msg: "Wrong Password Entered",
+          success: false,
+        });
+      }
+  
+      let access_token = await utils.issueToken({
+        _id: user._id,
+        email:user.email,
+
+      });
+  
+      let result = {
+        user: {
+          _id: user._id,
+          email: email,
+          imageUrl: user.imageUrl || "",
+        },
+        access_token,
+      };
+  
+      return res.status(200).json({ success: true, result });
+    } catch (error) {
+      return res.status(500).json({
+        msg: "Login Failed",
+        error: error.message,
+        success: false,
+      });
+    }
+  },
+  forgotPassword: async (req, res) => {
+    try {
+      let email = req.body.email;
+      let findUser = await User.findOne({ email: email });
+      if (!findUser) {
+        return res.status(404).json({
+          msg: "User with this Email does not exist",
+          success: true,
+        });
+      }
+      let randomString = randomstring.generate();
+      let updateUser = await User.findOneAndUpdate(
+        { email: email },
+        { $set: { resetToken: randomString } },
+        { new: true }
+      );
+      services.sendResetPasswordMail(findUser.email, randomString);
+      res.status(200).json({
+        msg: "Reset Email Have been sent",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: error.message,
+        success: false,
+      });
+    }
+  },
+  resetPassword: async (req, res) => {
+    try {
+      let token = req.query.token;
+      let findUser = await User.findOne({ resetToken: token });
+      if (!findUser) {
+        return res.status(200).json({
+          msg: "Link have been expired",
+          success: true,
+        });
+      }
+      let password = req.body.password;
+      let match = await utils.comparePassword(password, findUser.password);
+      if (match) {
+        return res.status(400).json({
+          msg: "Old password cannot be set as new password",
+          success: false,
+        });
+      }
+      let newPassword = await bcrypt.hash(password, 10);
+      let user = await User.findByIdAndUpdate(
+        { _id: findUser._id },
+        { $set: { password: newPassword, resetToken: "" } },
+        { new: true }
+      );
+      return res.status(200).json({
+        msg: "User Password Have been Reset",
+        success: true,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        msg: error.message,
+        success: false,
+      });
+    }
+  },
+  changePassword: async (req, res) => {
+    try {
+      let _id = req.token._id;
+      let data = req.body;
+      let password = data.password;
+      let user = await User.findOne({ _id });
+      if (!user) {
+        return res.status(404).json({
+          msg: "User not found with this id",
+          success: false,
+        });
+      }
+      let userId = user._id;
+      let match = await utils.comparePassword(password, user.password);
+      if (!match) {
+        return res.status(400).json({
+          msg: "The password you entered does not match your real password! Input Correct Password",
+          success: false,
+        });
+      }
+      data.password = await bcrypt.hash(data.newPassword, 10);
+      let samePassword = await utils.comparePassword(
+        data.newPassword,
+        user.password
+      );
+      if (samePassword) {
+        return res.status(400).json({
+          msg: "Old and new password cannot be same",
+          success: false,
+        });
+      }
+      let updatePassword = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+          password: data.password,
+        }
+      );
+      return res.status(200).json({
+        msg: "Password Updated",
+        success: true,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        msg: "Failed to Change Password",
+        error: error.message,
+        success: false,
+      });
+    }
+  },
+  viewUser: async (req, res) => {
+    try {
+      let userId = req.query.id;
+      let user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          msg: "User not found",
+          success: false,
+        });
+      }
+      res.status(200).json({
+        user: user,
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Failed to view user",
+        error: error.message || "Something went wrong.",
+        success: false,
+      });
+    }
+  },
+  updateUser: async (req, res) => {
+    try {
+      let userId = req.query.id;
+      let data = req.body;
+      if (!data) {
+        return res.status(400).json({
+          msg: "Please provide user data to update",
+          success: false,
+        });
+      }
+      let updateUser = await User.findByIdAndUpdate(userId, data, {
+        new: true,
+      });
+      if (!updateUser) {
+        return res.status(404).json({
+          msg: "User not found",
+          success: false,
+        });
+      }
+      res.status(200).json({
+        user: updateUser,
+        msg: "User updated successfully",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Failed to update user",
+        error: error.message || "Something went wrong.",
+        success: false,
+      });
+    }
+  },
+};
+module.exports = methods;
