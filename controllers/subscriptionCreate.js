@@ -284,6 +284,15 @@ stripeWebhooks : async (req, res, next) => {
         console.error('Error handling webhook:', error);
         res.sendStatus(400);
     }
+},
+getPlan: async(req,res)=>{
+    try {
+        const plans = await plan.find({});
+      return  res.status(200).json(plans);
+    } catch (error) {
+        console.error('Error fetching plans:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
 }
 }
 

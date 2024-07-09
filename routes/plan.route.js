@@ -7,4 +7,5 @@ const app = express();
 
 router.post('/createPlan',planController.createModel)
 router.post('/createSubscription',planController.getSubscriptionForUserFunction)
+router.get('/getPlan',planController.getPlan)
 module.exports = router;
