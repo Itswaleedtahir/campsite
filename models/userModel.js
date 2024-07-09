@@ -30,6 +30,21 @@ var user = new Schema({
     },
     "resetToken":{
         type:String
+    },
+    "subscriptionStatus":{
+        type:String,
+        default:'No subscription'
+    },
+    "isPaid":{
+        type:String,
+        default:false
+    },
+    "subscriptionId":{
+        type:String,
+        default:false
+    },
+    "planId":{
+        type:String
     }
 });
 

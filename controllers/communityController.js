@@ -1,4 +1,4 @@
-let community = require('../models/communities');
+const community = require('../models/communities');
 
 
 let methods = {

@@ -147,6 +147,9 @@ let methods = {
         user: {
           _id: user._id,
           email: email,
+          subscriptionStatus:user.subscriptionStatus,
+          isPaid:user.isPaid,
+          subscriptionId:user.subscriptionId,
           imageUrl: user.imageUrl || "",
         },
         access_token,
