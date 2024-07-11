@@ -3,6 +3,7 @@ require("dotenv").config();
 mongoose.Promise = global.Promise;
 const connectDB = async () => {
   try {
+    console.log("dburl",process.env.DB_UR)
     await mongoose.connect(process.env.DB_URL, {
       dbName: process.env.DB_NAME,
     });

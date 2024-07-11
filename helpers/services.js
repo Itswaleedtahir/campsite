@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
+const AWS = require("aws-sdk");
 dotenv.config();
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
@@ -10,6 +11,18 @@ const transporter = nodemailer.createTransport({
     pass: process.env.BREVO_PASS,
   },
 });
+
+
+// s3 config
+console.log("process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY ", process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY)
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // your AWS access id
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // your AWS access key
+    signatureVersion: 'v4',
+    region: 'us-east-1'
+});
+
+
 const methods = {
   sendResetPasswordMail: async (email, token, res) => {
     try {
@@ -50,6 +63,63 @@ const methods = {
         error: error.message || "Something went wrong."
       });
     }
-  }
+  },
+
+    uploadFile: async (file, access)=> {
+    console.log("file ", file);
+    file.name = file.name.replace(/\s/g, '');
+    file.name = file.name.replace('#', '');
+    file.name = file.name.replace('"', '');
+    let fileName = file.name;
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
+    const fileNameWithoutExtension = "fileupload/" + Date.now() + "/" + file.name.substring(0, file.name.lastIndexOf('.'));
+    console.log("fileNameWithoutExtension,fileExtension ", fileNameWithoutExtension, fileExtension)
+
+    // const attempts = await getS3ObjectsCount(fileNameWithoutExtension, fileExtension)
+    // console.log("attempts ", attempts)
+    // if (attempts > 0) {
+    //     fileName = `${fileNameWithoutExtension}(${attempts+1})${fileExtension}`;
+    // }else{
+    //     fileName= `${fileNameWithoutExtension}${fileExtension}`;
+    // }
+    fileName = `${fileNameWithoutExtension}${fileExtension}`;
+    console.log("fileName ", fileName)
+    if (access === "Public") {
+        const params = {
+            Bucket: process.env.AWS_BUCKET,
+            Key: `${fileName}`,
+        };
+        console.log("params ", params);
+        const uploadParams = {
+            Bucket: process.env.AWS_BUCKET,
+            Key: `${fileName}`,
+            ContentDisposition: 'inline',
+            ContentType: file.mimetype,
+            Body: file.data,
+            ACL: "public-read",
+        };
+        const data = await s3.upload(uploadParams).promise();
+        console.log("data ", data);
+        return data;
+    } else if (access === "Private") {
+        const params = {
+            Bucket: process.env.AWS_BUCKET,
+            Key: `${fileName}`,
+        };
+        console.log("params ", params);
+        const uploadParams = {
+            Bucket: process.env.AWS_BUCKET,
+            Key: `${fileName}`,
+            ContentDisposition: 'inline',
+            ContentType: file.mimetype,
+            Body: file.data,
+        };
+        const data = await s3.upload(uploadParams).promise();
+        console.log("data ", data);
+        return data;
+    }
+}
 };
+
+
 module.exports = methods;

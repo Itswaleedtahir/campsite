@@ -2,8 +2,12 @@ const router = require("express").Router();
 const userRoutes = require("./user.route");
 const communityRoute = require("./community.route")
 const planSubscription = require("./plan.route")
+const campsitesRoutes = require("./campsites.route")
+const reviewRoutes = require("./reviews.route")
 const express = require('express')
 router.use("/user", userRoutes);
 router.use("/community", communityRoute);
 router.use("/subscription",planSubscription)
+router.use("/campsites",campsitesRoutes)
+router.use("/review",reviewRoutes)
 module.exports = router;

@@ -5,10 +5,12 @@ const cors = require("cors");
 const connectDB = require("./config/dbConfig"); // Adjust the path as necessary
 const Router = require("./routes/index");
 const { stripeWebhooks } = require("./controllers/subscriptionCreate");
+const upload = require("express-fileupload");
 const app = express();
 app.use(cors());
 app.post("/api/webhook", express.raw({ type: 'application/json' }), stripeWebhooks);
 app.use(express.json());
+app.use(upload());
 app.use("/", Router);
 var port = process.env.PORT || 3001;
 var env = process.env.NODE_ENV;
