@@ -114,15 +114,16 @@ let methods = {
     },
     getSingleCampSite: async(req,res)=>{
         try {
-            const campsite = await Campsites.findById(req.params.id);
+            const campsite = await Campsites.findById(req.params.id).populate('peopleJoined'); // Populate the peopleJoined field with user data
             if (!campsite) {
-              res.status(404).send({ message: 'Campsite not found' });
+                res.status(404).send({ message: 'Campsite not found' });
             } else {
-              res.status(200).send(campsite);
+                res.status(200).send(campsite);
             }
-          } catch (error) {
+        } catch (error) {
             res.status(500).send({ message: 'Error retrieving the campsite', error: error.message });
-          }
+        }
+    
     }
 }
 

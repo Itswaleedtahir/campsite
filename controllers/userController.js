@@ -301,6 +301,7 @@ let methods = {
   updateUser: async (req, res) => {
     try {
       let userId = req.query.id;
+      console.log("id",userId)
       let data = req.body;
       if (!data) {
         return res.status(400).json({

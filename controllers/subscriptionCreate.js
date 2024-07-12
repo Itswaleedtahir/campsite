@@ -1,6 +1,7 @@
 const plan = require('../models/Plans');
+const Campsite = require('../models/campsites')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-let User = require("../models/userModel");
+const User = require("../models/userModel");
 
 // (priceId, email, isPreSignup, paymentMethodId)
 let methods = {
@@ -274,7 +275,41 @@ stripeWebhooks : async (req, res, next) => {
 
                 // Then define and call a function to handle the event subscription_schedule.canceled
                 break;
-            default:
+                case 'payment_intent.succeeded':
+                    const paymentIntentSucceeded = event.data.object;
+                    console.log("paymentIntentSucceeded", paymentIntentSucceeded);
+                    const customer5 = await stripe.customers.retrieve(
+                        paymentIntentSucceeded.customer
+                    );
+                    console.log("customer", customer5);
+                    customerEmail = customer5?.email?.toLowerCase();
+                    ifUser = await User.findOne({ email: customerEmail });
+                    if (ifUser) {
+                        // Extract campsiteId and userId from the paymentIntentSucceeded metadata
+                        const campsiteId = paymentIntentSucceeded.metadata.campsiteId;
+                        const userId = paymentIntentSucceeded.metadata.userId;
+    
+                        const campsite = await Campsite.findById(campsiteId);
+                        if (campsite) {
+                            // Add user to campsite's peopleJoined array
+                           
+                                campsite.peopleJoined.push(userId);
+                            
+                            // Add campsite to user's CampsitesJoined array
+                       
+                                ifUser.CampsitesJoined.push(campsiteId);
+                            
+                            // Save changes
+                            await campsite.save();
+                            await ifUser.save();
+                        } else {
+                            console.log('Campsite not found');
+                        }
+                    } else {
+                        console.log('User not found');
+                    }
+                    break;
+                default:
                 console.log('Unhandled event type:', event.type);
         }
 
@@ -293,7 +328,110 @@ getPlan: async(req,res)=>{
         console.error('Error fetching plans:', error);
         return res.status(500).json({ message: 'Internal Server Error' });
     }
-}
+},
+
+ securePayment2 : async (req, res) => {
+    try {
+        let {_id,email} = req.token;
+      console.log("data",_id,email);
+      const{campsiteId} = req.params
+        let { currency, amount } = req.body;
+      if (!currency) {
+        currency = 'USD'
+      }
+      let existingCustomers = await stripe.customers.list({ email: email });
+      console.log("existingCustomers", existingCustomers)
+      if (existingCustomers.data.length) {
+        // don't create customer if already exists
+        console.log("Dont create", existingCustomers.data[0].id)
+        // create intent
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(amount * 100),
+          currency: currency,
+          customer: existingCustomers.data[0].id,
+          description: "Customer Payment",
+          metadata: {
+            userId: _id,
+            campsiteId: campsiteId
+          },
+        });
+        res.status(200).send({
+          success: true,
+          message: "Payment has been made",
+          paymentIntent: paymentIntent
+        })
+      } else {
+        console.log("create customer");
+        //create customer first against email
+        const customer = await stripe.customers
+          .create({
+            email:email,
+          })
+        console.log(customer)
+        if (customer) {
+          //charge customer after creating customer
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(amount * 100),
+            currency: 'USD',
+            customer: customer.id,
+            description: "Customer Payment"
+          });
+          console.log(paymentIntent)
+          if (paymentIntent) {
+            res.status(200).send({
+              success: true,
+              message: "Payment has been made",
+              paymentIntent: paymentIntent
+            })
+          }
+        } else {
+          res.status(422).send({
+            success: false,
+            message: "Error Creating New Customer"
+          })
+        }
+      }
+    }
+    catch (err) {
+      console.log("err.isJoi: ", err)
+      console.log(err.type)
+      if (err.isJoi) {
+        res.status(422).json({
+          success: false,
+          message: err.details[0].message
+        })
+      } else if (err.type == "StripeInvalidRequestError") {
+        console.log("stripe error")
+        console.log('err.raw ', err.raw.message)
+        res.status(400).json({
+          success: false,
+          message: err.raw.message
+        })
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal Server Error"
+        })
+      }
+    }
+  },
+  stripetesting : async (req, res, ) => {
+
+    try {
+        const paymentIntent = await stripe.paymentIntents.confirm(
+            'pi_3PbhxORwImzljb970qGEJJz8',
+            {
+              payment_method: 'pm_1PacZ2RwImzljb97EUX6y9ic',
+              return_url: 'https://www.example.com',
+            }
+          );
+          return res.send(paymentIntent)
+    } catch (error) {
+        console.error('Error handling webhook:', error);
+        res.sendStatus(400);
+    }
+},
+
 }
 
 module.exports = methods

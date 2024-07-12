@@ -14,6 +14,9 @@ var user = new Schema({
         type: String,
         required: true
     },
+    "image":{
+        type:String,
+    },
     "password": {
         type: String,
         required: true
@@ -28,6 +31,10 @@ var user = new Schema({
         type:Boolean,
         default:false
     },
+    "CampsitesJoined": [{
+        type: Schema.Types.ObjectId,
+        ref: 'Campsite'
+      }],
     "resetToken":{
         type:String
     },
@@ -48,4 +55,4 @@ var user = new Schema({
     }
 });
 
-module.exports = mongoose.model('user', user);
+module.exports = mongoose.model('User', user);

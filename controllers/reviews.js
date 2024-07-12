@@ -1,6 +1,8 @@
 const Review = require("../models/reviews")
 const User = require("../models/userModel")
 const Campsite = require("../models/campsites")
+const mongoose = require('mongoose');
+
 
 let methods = {
     addReview: async(req,res)=>{
@@ -54,6 +56,38 @@ let methods = {
             console.log("error",error)
             res.status(500).send({ message: 'Error creating the review', error: error.message });
           }
-    }
+    },
+    getReviewsForSingleCampsites:async(req, res)=>{
+      try {
+          const campsiteId = req.params.campsiteId;
+          console.log("id", campsiteId);
+  
+          // Aggregate to get ratings summary
+          const reviewsData = await Review.aggregate([
+              { $match: { campsiteId: new mongoose.Types.ObjectId(campsiteId) } },  // Ensure this matches your schema (campsiteId)
+              {
+                  $group: {
+                      _id: '$rating',
+                      count: { $sum: 1 }
+                  }
+              }
+          ]);
+  
+          // Find reviews and populate user details
+          const reviews = await Review.find({ campsiteId: campsiteId })
+                                      .populate('userId');  // Populate user name and email
+  
+          res.status(200).send({
+              reviews: reviews,
+              ratingsSummary: reviewsData.reduce((acc, item) => {
+                  acc[item._id] = item.count; // Format summary to be more readable
+                  return acc;
+              }, {})
+          });
+      } catch (error) {
+          console.log("error", error);
+          res.status(500).send({ message: 'Error retrieving reviews', error: error.message });
+      }
+  }
 }
 module.exports = methods
