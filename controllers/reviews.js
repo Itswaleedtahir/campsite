@@ -23,9 +23,9 @@ let methods = {
                     campsiteId: req.body.campsiteid
                 });
             
-                if (existingReview) {
-                    return res.status(409).send({ message: 'You have already reviewed this campsite.' });
-                }
+                // if (existingReview) {
+                //     return res.status(409).send({ message: 'You have already reviewed this campsite.' });
+                // }
             const newReview = new Review({
               text: req.body.text,
               rating: req.body.rating,
