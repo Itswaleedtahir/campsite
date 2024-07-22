@@ -331,5 +331,83 @@ let methods = {
       });
     }
   },
+  addToFavourites:async(req,res)=>{
+    let userId = req.token._id;
+      console.log("id",userId)
+    const { campsiteId } = req.body;
+
+    if (!userId || !campsiteId) {
+        return res.status(400).send({ message: 'Missing user ID or campsite ID' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $addToSet: { favourites: campsiteId } },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send(updatedUser);
+    } catch (error) {
+        console.log('Error adding to favourites:', error);
+        res.status(500).send({ message: 'Error adding to favourites', error: error.message });
+    }
+  },
+  addToWishlist:async(req,res)=>{
+    let userId = req.token._id;
+      console.log("id",userId)
+    const { campsiteId } = req.body;
+
+    if (!userId || !campsiteId) {
+        return res.status(400).send({ message: 'Missing user ID or campsite ID' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $addToSet: { wishlist: campsiteId } },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send(updatedUser);
+    } catch (error) {
+        console.log('Error adding to favourites:', error);
+        res.status(500).send({ message: 'Error adding to favourites', error: error.message });
+    }
+  },
+  getFavourites:async(req,res)=>{
+    try {
+      let userId = req.token._id;
+      const user = await User.findById(userId).populate('favourites');
+      if (!user) {
+          return res.status(404).send({ message: 'User not found' });
+      }
+      res.status(200).send(user.favourites);
+  } catch (error) {
+      console.log('Error retrieving favourites:', error);
+      res.status(500).send({ message: 'Error retrieving favourites', error: error.message });
+  }
+  },
+  getWishlist:async(req,res)=>{
+    try {
+      let userId = req.token._id;
+      const user = await User.findById(userId).populate('wishlist');
+      if (!user) {
+          return res.status(404).send({ message: 'User not found' });
+      }
+      res.status(200).send(user.wishlist);
+  } catch (error) {
+      console.log('Error retrieving wishlist:', error);
+      res.status(500).send({ message: 'Error retrieving wishlist', error: error.message });
+  }
+  },
 };
 module.exports = methods;

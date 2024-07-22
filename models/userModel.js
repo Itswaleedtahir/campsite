@@ -21,6 +21,7 @@ var user = new Schema({
         type: String,
         required: true
     },
+
     "profilepic": {
         type: String
     },
@@ -52,7 +53,15 @@ var user = new Schema({
     },
     "planId":{
         type:String
-    }
+    },
+    "favourites": [{
+        type: Schema.Types.ObjectId,
+        ref: 'Campsite'
+    }],
+    "wishlist": [{
+        type: Schema.Types.ObjectId,
+        ref: 'Campsite'
+    }]
 });
 
 module.exports = mongoose.model('User', user);

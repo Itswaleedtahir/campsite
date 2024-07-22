@@ -78,6 +78,10 @@ let methods = {
                 about: req.body.about,
                 phoneNo: req.body.phoneNo,
                 email: req.body.email,
+                location: {  // Add this to include the location object
+                    latitude: req.body.location.latitude,
+                    longitude: req.body.location.longitude
+                },
                 website: req.body.website,
                 amenities: req.body.amenities,
                 specialFeatures: req.body.specialFeatures,

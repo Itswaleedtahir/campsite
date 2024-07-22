@@ -22,6 +22,16 @@ const campsiteSchema = new Schema({
     type: String,
     required: true
   },
+  "location": { // Changed "Location" to "location" for consistency and updated structure
+    latitude: {
+      type: Number,
+      required: true
+    },
+    longitude: {
+      type: Number,
+      required: true
+    }
+  },
   "website": {
     type: String,
     required: false
