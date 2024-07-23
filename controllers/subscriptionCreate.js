@@ -90,7 +90,7 @@ createModel :async(req,res)=>{
             let subscription;
             console.log('attaching paymentMethodId ', paymentMethodId);
             subscription = await stripe.subscriptions.create({
-                customer: customer.id,
+                customer: newCustomer.id,
                 items: [{ price: priceId }],
                 default_payment_method: paymentMethodId,
                 // Start the subscription in 2 days
@@ -110,12 +110,12 @@ createModel :async(req,res)=>{
                 { new: true }
             )
             console.log("updatedUser else ", updatedUser)
-            return {
+            return res.status(201).send({
                 success: true,
                 message: 'Subscription created',
                 subscriptionId: subscription.id,
-                user: updatedUser,
-            };
+                user: updatedUser
+            });
         }
     } catch (err) {
         console.error(err);
@@ -263,6 +263,7 @@ stripeWebhooks : async (req, res, next) => {
                         ifUser.id,
                         {
                             isPaid: false,
+                            subscriptionId:"",
                             // shouldLoginAfter: dateAndTimeAfter48Hours, // Assuming this property is commented out intentionally
                             subscriptionStatus: "canceled"
                         },
