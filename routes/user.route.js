@@ -10,6 +10,7 @@ router.post(`/login`, userController.loginUser);
 router.post(`/forgot-password`, userController.forgotPassword);
 router.post(`/reset-password`, userController.resetPassword);
 router.post(`/change-password`, authPolicy, userController.changePassword);
+router.get(`/getUserDetails`, authPolicy, userController.getUserDetails);
 router.post(`/addToFavourites`,authPolicy,userController.addToFavourites)
 router.post(`/addToWishlist`,authPolicy,userController.addToWishlist)
 router.get(`/getFavourites`,authPolicy,userController.getFavourites)

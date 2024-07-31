@@ -14,11 +14,17 @@ let methods = {
           success: false,
         });
       }
+      console.log("data",data)
+      let referrer
+      if(data.referralCode){
+        referrer =await User.findOne({referralCode:data.referralCode}
+        )
+      }
 
       let userData = await User.findOne({ email: data.email });
       if (userData) {
         return res.status(404).json({
-          msg: "User already exist",
+          msg: "User already exists",
           success: false,
         });
       }
@@ -29,8 +35,12 @@ let methods = {
       // Hash the password
       data.password = await bcrypt.hash(data.password, 10);
   
+      // Generate a unique referral code
+      data.referralCode = crypto.randomBytes(8).toString('hex');
+
       // Add the OTP to the user data
       data.otp = otp;
+      data.referredBy = referrer._id
   
       let user = new User(data);
       let addUser = await user.save();
@@ -46,7 +56,7 @@ let methods = {
   
       res.status(200).json({
         user: addUser,
-        msg: "Otp sent to ur email",
+        msg: "OTP sent to your email",
         success: true,
       });
     } catch (error) {
@@ -57,6 +67,7 @@ let methods = {
       });
     }
   },
+
   verifyUser: async (req, res) => {
     try {
       const { email, otp } = req.body;
@@ -87,8 +98,17 @@ let methods = {
       // Verify the user and update isVerified to true
       user.isVerified = true;
       user.otp = null; // Clear the OTP field after successful verification
-  
       await user.save();
+  
+      // If the user was referred, add points to the referrer
+      if (user.referredBy) {
+        let referrer = await User.findById(user.referredBy);
+        console.log("referrer",referrer)
+        if (referrer) {
+          referrer.rewardPoints += 5; // Assuming 5 points per successful referral
+          await referrer.save();
+        }
+      }
   
       res.status(200).json({
         msg: "User verified successfully",
@@ -102,6 +122,7 @@ let methods = {
       });
     }
   },
+
   loginUser: async (req, res) => {
     try {
       let data = req.body;
@@ -275,6 +296,18 @@ let methods = {
         success: false,
       });
     }
+  },
+  getUserDetails: async(req,res)=>{
+    let userId = req.token._id;
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).send({ message: "User not found" });
+      }
+      res.status(200).json(user);
+  } catch (error) {
+      res.status(500).send({ message: "Error retrieving user data", error: error.message });
+  }
   },
   viewUser: async (req, res) => {
     try {
