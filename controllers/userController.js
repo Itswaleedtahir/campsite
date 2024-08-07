@@ -4,6 +4,9 @@ const crypto = require('crypto');
 let utils = require("../utils/index");
 const services = require("../helpers/services");
 const randomstring = require("randomstring");
+const {OAuth2Client} = require('google-auth-library');
+const client = new OAuth2Client();
+
 let methods = {
   addUser: async (req, res) => {
     try {
@@ -439,8 +442,87 @@ let methods = {
       res.status(200).send(user.wishlist);
   } catch (error) {
       console.log('Error retrieving wishlist:', error);
-      res.status(500).send({ message: 'Error retrieving wishlist', error: error.message });
+     return res.status(500).send({ message: 'Error retrieving wishlist', error: error.message });
   }
   },
+  googleVerify:async(req,res)=>{
+    try {
+      const {tokenId}=req.body
+      const client = new OAuth2Client(process.env.CLIENT_ID);
+
+      const ticket = await client.verifyIdToken({
+        idToken: tokenId,
+        audience: process.env.CLIENT_ID,
+      });
+    
+      const response = ticket.getPayload();
+    
+      if (response.iss !== 'accounts.google.com' && response.aud !== process.env.CLIENT_ID)
+        return res.status(400).json({ status: 'error', error: 'Bad Request' });
+    
+      const user = {
+        email: response.email,
+        image: response.picture,
+        social_id: response.sub,
+        first_name: response.given_name,
+        last_name: response.family_name,
+      };
+      const findUser = await User.findOne({
+        googleId:user.social_id
+      })
+      if(findUser){
+        let access_token = await utils.issueToken({
+          _id: findUser._id,
+          email:findUser.email,
+        });
+
+        return res.status(200).send({message:"User exist",token: access_token,isExist:true })
+      }else {
+        const referralCode = crypto.randomBytes(8).toString('hex');
+        const newUser = new User({
+          email: user.email,
+          googleId: user.social_id,
+          firstname: user.first_name,
+          lastname: user.last_name,
+          profilePicture: user.image,
+          referralCode:referralCode
+        });
+  
+        const savedUser = await newUser.save();
+        let access_token = await utils.issueToken({
+          _id: savedUser._id,
+          email: savedUser.email,
+        });
+        return res.status(201).json({ message: "User created", token: access_token, isExist:false });
+      }
+    
+    } catch (error) {
+      console.log('Error', error);
+      return res.status(500).send({ message: 'Error', error: error.message });
+    }
+  },
+  referralCheck:async(req,res)=>{
+    const {code}=req.body
+    let userId = req.token._id;
+    try {
+      // If the user was referred, add points to the referrer
+     const user = await User.findOne({
+          referralCode:code
+        });
+        if (user) {
+          user.rewardPoints += 5; // Assuming 5 points per successful referral
+          await user.save();
+        }
+      const updateUser = await User.findByIdAndUpdate(userId, {
+        $set: {
+          referredBy: user._id
+        }
+      }, { new: true }); 
+      return res.status(201).send({message:"Updated User", user: updateUser})
+    } catch (error) {
+      console.log('Error', error);
+     return res.status(500).send({ message: 'Error', error: error.message });
+    }
+  }
 };
 module.exports = methods;

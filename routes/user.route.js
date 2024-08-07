@@ -7,6 +7,8 @@ router.post(`/user-verification`, userController.verifyUser);
 router.get(`/view-user`, userController.viewUser);
 router.put(`/update-user`, userController.updateUser);
 router.post(`/login`, userController.loginUser);
+router.post(`/googleVerify`, userController.googleVerify);
+router.post(`/referralCheck`,authPolicy ,userController.referralCheck);
 router.post(`/forgot-password`, userController.forgotPassword);
 router.post(`/reset-password`, userController.resetPassword);
 router.post(`/change-password`, authPolicy, userController.changePassword);

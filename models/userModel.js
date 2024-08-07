@@ -19,7 +19,7 @@ var user = new Schema({
     },
     "password": {
         type: String,
-        required: true
+        required: false
     },
     "profilepic": {
         type: String
@@ -72,6 +72,10 @@ var user = new Schema({
     "rewardPoints": {
         type: Number,
         default: 0 // Default points are 0
+    },
+    "googleId":{
+        type:String,
+        required:false
     }
 });
 

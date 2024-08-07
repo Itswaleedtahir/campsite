@@ -41,7 +41,35 @@ const methods = {
       console.log("Reset Password Email sent", info.messageId);
     } catch (error) {
       console.error("Failed to send email:", error);
+    return  res.status(500).json({
+        msg: "Failed to send  email",
+        error: error.message || "Something went wrong."
+      });
     }
+  },
+  sendItemBuyEmail:async(user,contactNo,address,rewardItem,res)=>{
+      try {
+        console.log("item",user,contactNo,address)
+        const info = await transporter.sendMail({
+          from: process.env.BREVO_SENDER,
+          to: "waleedcodistan@gmail.com",
+          subject: "Reward Item Purchased",
+          text: `Reward Item Purchase by ${user.email}`,
+          html: `
+          <p>User email is ${user.email}.</p>
+          <p>Item: ${rewardItem.name}</p>
+          <p>Contact No: ${contactNo}</p>
+          <p>Address: ${address}</p>
+      `,
+        });
+        console.log("Reset Password Email sent", info.messageId);
+      } catch (error) {
+        console.error("Failed to send email:", error);
+     return  res.status(500).json({
+        msg: "Failed to send  email",
+        error: error.message || "Something went wrong."
+      });
+      }
   },
   sendVerificationEmail :  async (email, otp, res) => {
     try {
@@ -58,7 +86,7 @@ const methods = {
       console.log("Verification Email sent", info.messageId);
     } catch (error) {
       console.error("Failed to send email:", error);
-      res.status(500).json({
+      return res.status(500).json({
         msg: "Failed to send verification email",
         error: error.message || "Something went wrong."
       });

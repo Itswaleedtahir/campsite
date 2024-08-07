@@ -91,7 +91,7 @@ let methods = {
               });
           
               const savedCampsite = await newCampsite.save();
-              res.status(201).send(savedCampsite);
+            return  res.status(201).send(savedCampsite);
             
         } catch (error) {
             console.log("error",error)
@@ -106,26 +106,26 @@ let methods = {
                                    .limit(parseInt(limit));  // Limit the number of items
 
     const totalCampsites = await Campsites.countDocuments(); // Count total documents for pagination info
-    res.status(200).send({
+   return res.status(200).send({
       campsites: campsites,
       total: totalCampsites,
       pages: Math.ceil(totalCampsites / limit),
       currentPage: parseInt(page)
     });
   } catch (error) {
-    res.status(500).send({ message: 'Error retrieving campsites', error: error.message });
+  return  res.status(500).send({ message: 'Error retrieving campsites', error: error.message });
   }
     },
     getSingleCampSite: async(req,res)=>{
         try {
             const campsite = await Campsites.findById(req.params.id).populate('peopleJoined'); // Populate the peopleJoined field with user data
             if (!campsite) {
-                res.status(404).send({ message: 'Campsite not found' });
+               return res.status(404).send({ message: 'Campsite not found' });
             } else {
-                res.status(200).send(campsite);
+               return res.status(200).send(campsite);
             }
         } catch (error) {
-            res.status(500).send({ message: 'Error retrieving the campsite', error: error.message });
+          return  res.status(500).send({ message: 'Error retrieving the campsite', error: error.message });
         }
     
     }
