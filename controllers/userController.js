@@ -43,8 +43,9 @@ let methods = {
 
       // Add the OTP to the user data
       data.otp = otp;
+      if(referrer){
       data.referredBy = referrer._id
-  
+      }
       let user = new User(data);
       let addUser = await user.save();
       if (!addUser) {
@@ -57,13 +58,14 @@ let methods = {
       // Send the OTP email
       await services.sendVerificationEmail(data.email, otp, res);
   
-      res.status(200).json({
+    return  res.status(200).json({
         user: addUser,
         msg: "OTP sent to your email",
         success: true,
       });
     } catch (error) {
-      res.status(500).json({
+      console.log("error",error)
+    return  res.status(500).json({
         msg: "Failed to add user",
         error: error.message || "Something went wrong.",
         success: false,
