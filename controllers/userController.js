@@ -75,58 +75,61 @@ let methods = {
 
   verifyUser: async (req, res) => {
     try {
-      const { email, otp } = req.body;
-      if (!email || !otp) {
-        return res.status(400).json({
-          msg: "Please provide both email and OTP",
-          success: false,
-        });
-      }
-  
-      // Find the user by email
-      let user = await User.findOne({ email: email });
-      if (!user) {
-        return res.status(404).json({
-          msg: "User not found",
-          success: false,
-        });
-      }
-  
-      // Check if the OTP matches
-      if (user.otp !== otp) {
-        return res.status(401).json({
-          msg: "Invalid OTP",
-          success: false,
-        });
-      }
-  
-      // Verify the user and update isVerified to true
-      user.isVerified = true;
-      user.otp = null; // Clear the OTP field after successful verification
-      await user.save();
-  
-      // If the user was referred, add points to the referrer
-      if (user.referredBy) {
-        let referrer = await User.findById(user.referredBy);
-        console.log("referrer",referrer)
-        if (referrer) {
-          referrer.rewardPoints += 5; // Assuming 5 points per successful referral
-          await referrer.save();
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({
+                msg: "Please provide both email and OTP",
+                success: false,
+            });
         }
-      }
-  
-      res.status(200).json({
-        msg: "User verified successfully",
-        success: true,
-      });
+
+        // Find the user by email
+        let user = await User.findOne({ email: email });
+        if (!user) {
+            return res.status(404).json({
+                msg: "User not found",
+                success: false,
+            });
+        }
+
+        // Check if the OTP matches
+        if (user.otp !== otp) {
+            return res.status(401).json({
+                msg: "Invalid OTP",
+                success: false,
+            });
+        }
+
+        // Verify the user and update isVerified to true
+        user.isVerified = true;
+        user.otp = null; // Clear the OTP field after successful verification
+        await user.save();
+
+        // If the user was referred, add points to the referrer
+        if (user.referredBy) {
+            let referrer = await User.findById(user.referredBy);
+            console.log("referrer", referrer);
+            if (referrer) {
+                referrer.rewardPoints += 5; // Assuming 5 points per successful referral
+                
+                // Update the referrer's level based on the new points
+                await referrer.updateUserLevel();
+            }
+        }
+
+        res.status(200).json({
+            msg: "User verified successfully",
+            success: true,
+        });
     } catch (error) {
-      res.status(500).json({
-        msg: "Failed to verify user",
-        error: error.message || "Something went wrong.",
-        success: false,
-      });
+        res.status(500).json({
+            msg: "Failed to verify user",
+            error: error.message || "Something went wrong.",
+            success: false,
+        });
     }
-  },
+},
+
 
   loginUser: async (req, res) => {
     try {
@@ -302,18 +305,21 @@ let methods = {
       });
     }
   },
-  getUserDetails: async(req,res)=>{
+  getUserDetails: async (req, res) => {
     let userId = req.token._id;
     try {
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(404).send({ message: "User not found" });
-      }
-      res.status(200).json(user);
-  } catch (error) {
-      res.status(500).send({ message: "Error retrieving user data", error: error.message });
-  }
-  },
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        await user.updateUserLevel(); // Ensure the user's level is updated
+
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(500).send({ message: "Error retrieving user data", error: error.message });
+    }
+},
   viewUser: async (req, res) => {
     try {
       let userId = req.query.id;
@@ -338,37 +344,49 @@ let methods = {
   },
   updateUser: async (req, res) => {
     try {
-      let userId = req.query.id;
-      console.log("id",userId)
-      let data = req.body;
-      if (!data) {
-        return res.status(400).json({
-          msg: "Please provide user data to update",
-          success: false,
+        let userId = req.query.id;
+        console.log("id", userId);
+        let data = req.body;
+
+        if (!data) {
+            return res.status(400).json({
+                msg: "Please provide user data to update",
+                success: false,
+            });
+        }
+
+        // Update the user data
+        let updateUser = await User.findByIdAndUpdate(userId, data, {
+            new: true,
         });
-      }
-      let updateUser = await User.findByIdAndUpdate(userId, data, {
-        new: true,
-      });
-      if (!updateUser) {
-        return res.status(404).json({
-          msg: "User not found",
-          success: false,
+
+        if (!updateUser) {
+            return res.status(404).json({
+                msg: "User not found",
+                success: false,
+            });
+        }
+
+        // Check if rewardPoints was updated and update the user's level if necessary
+        if (data.rewardPoints !== undefined) {
+            await updateUser.updateUserLevel();
+            await updateUser.save(); // Save the user with the updated level
+        }
+
+        res.status(200).json({
+            user: updateUser,
+            msg: "User updated successfully",
+            success: true,
         });
-      }
-      res.status(200).json({
-        user: updateUser,
-        msg: "User updated successfully",
-        success: true,
-      });
     } catch (error) {
-      res.status(500).json({
-        msg: "Failed to update user",
-        error: error.message || "Something went wrong.",
-        success: false,
-      });
+        res.status(500).json({
+            msg: "Failed to update user",
+            error: error.message || "Something went wrong.",
+            success: false,
+        });
     }
-  },
+},
+
   addToFavourites:async(req,res)=>{
     let userId = req.token._id;
       console.log("id",userId)

@@ -62,21 +62,50 @@ var user = new Schema({
     }],
     "referralCode": {
         type: String,
-        unique: true, // Ensure that the referral code is unique across users
-        sparse: true // This makes it possible to have multiple null values (for users without a code)
+        unique: true,
+        sparse: true
     },
     "referredBy": {
         type: Schema.Types.ObjectId,
-        ref: 'User' // Reference to the user who referred this user
+        ref: 'User'
     },
     "rewardPoints": {
         type: Number,
-        default: 0 // Default points are 0
+        default: 0
     },
-    "googleId":{
-        type:String,
-        required:false
+    "googleId": {
+        type: String,
+        required: false
+    }, 
+    "level": {
+        type: String,
+        default: 'G1' // Default to the lowest level
     }
+});
+user.methods.updateUserLevel = async function() {
+    const Level = mongoose.model('Level');
+    const levels = await Level.find().sort({ pointsRequired: 1 });
+
+    let newLevel = levels[0].levelName; // Default to the lowest level
+
+    for (let i = 0; i < levels.length; i++) {
+        if (this.rewardPoints <= levels[i].pointsRequired) {
+            newLevel = levels[i].levelName;
+            break;
+        }
+    }
+
+    this.level = newLevel;
+    // No save here, saving happens outside
+};
+
+
+// Middleware to automatically update the level when rewardPoints change
+user.pre('save', async function(next) {
+    if (this.isModified('rewardPoints')) {
+        await this.updateUserLevel();
+    }
+    next();
 });
 
 module.exports = mongoose.model('User', user);
