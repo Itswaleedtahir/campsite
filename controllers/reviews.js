@@ -58,7 +58,7 @@ let methods = {
         res.status(201).send(savedReview);
     } catch (error) {
         console.log("error", error);
-        res.status(500).send({ message: 'Error creating the review', error: error.message });
+       return res.status(500).send({ message: 'Error creating the review', error: error.message });
     }
 },
 
