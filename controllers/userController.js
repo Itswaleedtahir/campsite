@@ -347,7 +347,7 @@ let methods = {
         let userId = req.query.id;
         console.log("id", userId);
         let data = req.body;
-
+        console.log("data",req.body)
         if (!data) {
             return res.status(400).json({
                 msg: "Please provide user data to update",

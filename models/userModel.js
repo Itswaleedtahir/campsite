@@ -80,7 +80,21 @@ var user = new Schema({
     "level": {
         type: String,
         default: 'G1' // Default to the lowest level
-    }
+    },
+    "purchasedItems": [{
+        itemId: { type: Schema.Types.ObjectId, ref: 'Item' },
+        count: { type: Number, default: 1 }
+    }],
+    "emergencyContacts": [{
+        name: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        }
+    }]
 });
 user.methods.updateUserLevel = async function() {
     const Level = mongoose.model('Level');

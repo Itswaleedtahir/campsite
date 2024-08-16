@@ -43,13 +43,14 @@ const methods = {
            return res.status(500).json({ message: 'Server error', error: error.message });
         }
     },
-    buyItems:async(req,res)=>{
+    buyItems: async (req, res) => {
         let userId = req.token._id;
         const { itemId, contactNo, address } = req.body;
+    
         try {
             const user = await User.findById(userId);
             const rewardItem = await item.findById(itemId);
-            console.log("item",rewardItem)
+    
             if (!user || !rewardItem) {
                 return res.status(404).json({ message: 'User or Reward Item not found' });
             }
@@ -60,15 +61,27 @@ const methods = {
     
             // Deduct reward points
             user.rewardPoints -= rewardItem.prize;
+    
+            // Check if item already exists in the purchasedItems array
+            let itemIndex = user.purchasedItems.findIndex(pItem => pItem.itemId.equals(rewardItem._id));
+            if (itemIndex > -1) {
+                // If item exists, increment the count
+                user.purchasedItems[itemIndex].count += 1;
+            } else {
+                // If item does not exist, add new item with count 1
+                user.purchasedItems.push({ itemId: rewardItem._id, count: 1 });
+            }
+    
             await user.save();
-            await services.sendItemBuyEmail(user,contactNo,address,rewardItem)
-            
-           return res.status(200).json({ message: 'Reward item purchased successfully' });
+            await services.sendItemBuyEmail(user, contactNo, address, rewardItem);
+    
+            return res.status(200).json({ message: 'Reward item purchased successfully' });
         } catch (error) {
-            console.log("error",error)
+            console.log("error", error)
             return res.status(500).json({ message: 'Server error', error: error.message });
         }
     }
+    
 }
 
 module.exports=methods
