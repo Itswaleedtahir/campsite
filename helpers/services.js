@@ -92,7 +92,27 @@ const methods = {
       });
     }
   },
-
+  ResendVerificationEmail :  async (email, otp, res) => {
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.BREVO_SENDER,
+        to: email,
+        subject: "Verify Your Account",
+        html: `<p>Dear User,<br><br>
+        Your otp is: <strong>${otp}</strong><br><br>
+        If you did not register, please ignore this email.<br><br>
+        Thank you,<br>
+        The Team</p>`,
+      });
+      console.log("Verification Email sent", info.messageId);
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      return res.status(500).json({
+        msg: "Failed to send verification email",
+        error: error.message || "Something went wrong."
+      });
+    }
+  },
     uploadFile: async (file, access)=> {
     console.log("file ", file);
     file.name = file.name.replace(/\s/g, '');

@@ -4,6 +4,7 @@ const userController = require("../controllers/userController");
 const authPolicy = require("../utils/auth.policy");
 router.post(`/user-signup`, userController.addUser);
 router.post(`/user-verification`, userController.verifyUser);
+router.post(`/resendOtp`, userController.resendOTP);
 router.get(`/view-user`, userController.viewUser);
 router.put(`/update-user`, userController.updateUser);
 router.post(`/login`, userController.loginUser);

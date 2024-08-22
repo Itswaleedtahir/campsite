@@ -5,11 +5,11 @@ const chatServer = process.env.CHAT_SERVER
 let methods = {
   createCommunity: async (req, res) => {
     try {
-      const { name } = req.body;
+      const { name,image } = req.body;
       if (!name) {
         return res.status(400).send({ message: 'Community name is required.' });
       }
-      const newCommunity = new community({ name, followers: [] });
+      const newCommunity = new community({ name, image,followers: [] });
       await newCommunity.save();
       // Data to be sent to the create group API
       const groupData = {
@@ -36,7 +36,8 @@ let methods = {
       return  res.status(201).send({ newCommunity, groupData: response.data });
       
     } catch (error) {
-    return  res.status(500).send({ message: 'Error creating community', error: error.message });
+      console.log("Error",Error)
+    return  res.status(500).send({ message: 'Error creating community', error });
     }
   },
   getAllCommunities: async (req, res) => {

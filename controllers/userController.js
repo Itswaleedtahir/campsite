@@ -86,7 +86,7 @@ let methods = {
         // Find the user by email
         let user = await User.findOne({ email: email });
         if (!user) {
-            return res.status(404).json({
+            return res.status(400).json({
                 msg: "User not found",
                 success: false,
             });
@@ -117,19 +117,58 @@ let methods = {
             }
         }
 
-        res.status(200).json({
+       return res.status(200).json({
             msg: "User verified successfully",
             success: true,
         });
     } catch (error) {
-        res.status(500).json({
+       return res.status(500).json({
             msg: "Failed to verify user",
             error: error.message || "Something went wrong.",
             success: false,
         });
     }
 },
+ resendOTP :async (req, res) => {
+  try {
+      const { email } = req.body;
+      if (!email) {
+          return res.status(400).json({
+              msg: "Email is required",
+              success: false,
+          });
+      }
 
+      // Find the user by email
+      let user = await User.findOne({ email: email });
+      if (!user) {
+          return res.status(404).json({
+              msg: "User not found",
+              success: false,
+          });
+      }
+
+      // Generate a new OTP
+      const newOtp = crypto.randomInt(1000, 9999) // Generate a 6-digit OTP
+
+      // Update the user's OTP
+      user.otp = newOtp;
+      await user.save();
+       // Send the OTP email
+       await services.ResendVerificationEmail(email, newOtp, res);
+    return  res.status(200).json({
+          msg: "OTP resent successfully",
+          otp:newOtp,
+          success: true,
+      });
+  } catch (error) {
+     return res.status(500).json({
+          msg: "Failed to resend OTP",
+          error: error.message || "Something went wrong.",
+          success: false,
+      });
+  }
+},
 
   loginUser: async (req, res) => {
     try {
