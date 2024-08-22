@@ -85,6 +85,10 @@ var user = new Schema({
         itemId: { type: Schema.Types.ObjectId, ref: 'Item' },
         count: { type: Number, default: 1 }
     }],
+    "firstLogin":{
+        type:Boolean,
+        default:true
+    },
     "emergencyContacts": [{
         name: {
             type: String,

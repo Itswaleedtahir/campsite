@@ -208,7 +208,7 @@ let methods = {
       let access_token = await utils.issueToken({
         _id: user._id,
         email:user.email,
-
+        firstLogin:user.firstLogin
       });
   
       let result = {
