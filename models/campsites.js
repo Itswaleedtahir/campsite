@@ -6,6 +6,10 @@ const campsiteSchema = new Schema({
     type: String,
     required: true
   },
+  "campsiteType":{
+    type: String,
+    require:false
+  },
   "country": {
     type: String,
     required: true

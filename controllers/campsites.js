@@ -78,6 +78,7 @@ let methods = {
                 about: req.body.about,
                 phoneNo: req.body.phoneNo,
                 email: req.body.email,
+                campsiteType:req.body.campsiteType,
                 location: {  // Add this to include the location object
                     latitude: req.body.location.latitude,
                     longitude: req.body.location.longitude
@@ -128,6 +129,38 @@ let methods = {
           return  res.status(500).send({ message: 'Error retrieving the campsite', error: error.message });
         }
     
+    },
+    searchCampsite: async(req,res)=>{
+        try {
+            const searchQuery = {
+                ...(req.body.campsiteType && { campsiteType: req.body.campsiteType }),
+                ...(req.body.price && { price: { $lte: req.body.price } }),
+                ...(req.body.averageRating && { 'reviewStats.averageRating': { $gte: req.body.averageRating } }),
+                ...(req.body.amenities && { amenities: { $all: req.body.amenities } }),
+                ...(req.body.specialFeatures && { specialFeatures: { $all: req.body.specialFeatures } }),
+                ...(req.body.rulesAndRegulations && { rulesAndRegulations: { $all: req.body.rulesAndRegulations } }),
+            };
+    
+            // // Check if location query is present
+            // if (req.body.location) {
+            //     const { latitude, longitude, maxDistance = 5000 } = req.body.location;  // maxDistance in meters
+            //     searchQuery.location = {
+            //         $near: {
+            //             $geometry: {
+            //                 type: "Point",
+            //                 coordinates: [longitude, latitude]
+            //             },
+            //             $maxDistance: maxDistance
+            //         }
+            //     };
+            // }
+    
+            const results = await Campsites.find(searchQuery);
+           return res.status(200).json(results);
+        } catch (error) {
+            console.log("error",error)
+           return res.status(500).json({ message: error.message });
+        }
     }
 }
 
