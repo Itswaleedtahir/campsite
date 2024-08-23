@@ -217,6 +217,7 @@ let methods = {
           email: email,
           subscriptionStatus:user.subscriptionStatus,
           isPaid:user.isPaid,
+          firstLogin:user.firstLogin,
           subscriptionId:user.subscriptionId,
           imageUrl: user.imageUrl || "",
         },
