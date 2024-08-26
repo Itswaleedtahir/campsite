@@ -99,6 +99,66 @@ let methods = {
        return res.status(500).send({ message: 'Error following community', error: error.message });
     }
 },
+unfollowCommunity: async (req, res) => {
+  const { communityId } = req.params;
+  const userId = req.token._id; // Assuming user ID is passed in the token
+
+  if (!userId) {
+      return res.status(400).send({ message: 'User ID is required in the header.' });
+  }
+
+  try {
+      // Retrieve community and check if it exists
+      const communityData = await community.findById(communityId); // Ensure correct ID usage
+      if (!communityData) {
+          return res.status(404).send({ message: 'Community not found.' });
+      }
+
+      console.log("Initial followers:", communityData.followers);
+
+      // Remove user from followers array if present
+      if (communityData.followers.includes(userId.toString())) { // Ensuring comparison as strings
+          const newFollowers = communityData.followers.filter(followerId => followerId.toString() !== userId.toString());
+          communityData.followers = newFollowers;
+          await communityData.save();
+          console.log("Updated followers:", communityData.followers);
+      } else {
+          return res.status(400).send({ message: 'User not following this community.' });
+      }
+
+      // Retrieve the chatRoomId from the chatroom table
+      const chatRoomData = await chatroom.findOne({ communityId: communityId });
+      if (!chatRoomData) {
+          return res.status(404).send({ message: 'Chat room not found for this community.' });
+      }
+
+      const chatRoomId = chatRoomData._id;
+
+      // Prepare data for the API to remove user from the group
+      const groupData = {
+          involved_person: userId,
+          chatRoomId: chatRoomId
+      };
+
+      const config = {
+          headers: {
+              'Authorization': `Bearer ${req.headers.authorization.split(' ')[1]}`, // Token for authorization
+              'Content-Type': 'application/json'
+          }
+      };
+
+      // API endpoint to remove user from the group
+      const removeGroupUrl = `${chatServer}/chat/chat/user`;
+      const response = await axios.delete(removeGroupUrl, { data: groupData, headers: config.headers });
+
+      return res.status(200).send({ communityData, groupRemoved: response.data });
+  } catch (error) {
+      console.log("Error:", error);
+      return res.status(500).send({ message: 'Error unfollowing community', error: error.message });
+  }
+},
+
+
   getUserFollowedCommunity: async (req, res) => {
     const { userId } = req.params;
 
