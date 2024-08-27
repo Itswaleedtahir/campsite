@@ -1,6 +1,7 @@
 const Campsites = require("../models/campsites")
 const services = require("../helpers/services")
-
+const CampsiteType = require('../models/campsiteTypes');
+const CampingLocationType = require("../models/campsiteLocationTypes")
 let methods = {
     fileUploadS3 : async (req, res, next) => {
         try {
@@ -84,6 +85,7 @@ let methods = {
                     longitude: req.body.location.longitude
                 },
                 website: req.body.website,
+                campingLocationType:req.body.campingLocationType,
                 amenities: req.body.amenities,
                 specialFeatures: req.body.specialFeatures,
                 rulesAndRegulations: req.body.rulesAndRegulations,
@@ -133,33 +135,90 @@ let methods = {
     searchCampsite: async(req,res)=>{
         try {
             const searchQuery = {
-                ...(req.body.campsiteType && { campsiteType: req.body.campsiteType }),
-                ...(req.body.price && { price: { $lte: req.body.price } }),
+                ...(req.body.campingLocationType && { campingLocationType: { $in: req.body.campingLocationType } }),
+                ...(req.body.campsiteType && { campsiteType: { $in: req.body.campsiteType } }),
+                ...(req.body.price && { price: { $gte: req.body.price.min, $lte: req.body.price.max } }),
                 ...(req.body.averageRating && { 'reviewStats.averageRating': { $gte: req.body.averageRating } }),
-                ...(req.body.amenities && { amenities: { $all: req.body.amenities } }),
-                ...(req.body.specialFeatures && { specialFeatures: { $all: req.body.specialFeatures } }),
+                ...(req.body.amenities && { amenities: { $in: req.body.amenities } }),
+                ...(req.body.specialFeatures && { specialFeatures: { $in: req.body.specialFeatures } }),
                 ...(req.body.rulesAndRegulations && { rulesAndRegulations: { $all: req.body.rulesAndRegulations } }),
             };
     
-            // // Check if location query is present
-            // if (req.body.location) {
-            //     const { latitude, longitude, maxDistance = 5000 } = req.body.location;  // maxDistance in meters
-            //     searchQuery.location = {
-            //         $near: {
-            //             $geometry: {
-            //                 type: "Point",
-            //                 coordinates: [longitude, latitude]
-            //             },
-            //             $maxDistance: maxDistance
-            //         }
-            //     };
-            // }
-    
             const results = await Campsites.find(searchQuery);
-           return res.status(200).json(results);
+            return res.status(200).json(results);
         } catch (error) {
-            console.log("error",error)
-           return res.status(500).json({ message: error.message });
+            console.log("Error", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    addCampsiteTypes: async(req,res)=>{
+        try {
+            const types = req.body.types; // Expect an array of types
+            if (!types || !Array.isArray(types)) {
+                return res.status(400).json({ message: "Invalid input. Please provide an array of campsite types." });
+            }
+    
+            // Use a loop or bulk operation to insert types
+            const insertPromises = types.map(type => {
+                const newType = new CampsiteType({ type });
+                return newType.save().catch(err => err.message); // Handle individual save errors
+            });
+    
+            // Await all promises to handle them at once
+            const results = await Promise.all(insertPromises);
+            const errors = results.filter(result => typeof result === 'string');
+            
+            if (errors.length > 0) {
+                return res.status(400).json({ message: "Some entries were not added due to errors.", errors });
+            }
+    
+            return res.status(201).json({ message: "All campsite types added successfully." });
+        } catch (error) {
+            console.log("Error adding campsite types:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    getCampsiteTypes: async(req,res)=>{
+        try {
+            const types = await CampsiteType.find({});
+            return res.status(200).json(types);
+        } catch (error) {
+            console.log("Error retrieving campsite types:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    addCampsiteLocationTypes:async(req,res)=>{
+        try {
+            const types = req.body.types; // Expect an array of types
+            if (!types || !Array.isArray(types)) {
+                return res.status(400).json({ message: "Invalid input. Please provide an array of camping location types." });
+            }
+    
+            const insertPromises = types.map(type => {
+                const newType = new CampingLocationType({ type });
+                return newType.save().catch(err => err.message); // Handle individual save errors
+            });
+    
+            const results = await Promise.all(insertPromises);
+            const errors = results.filter(result => typeof result === 'string');
+            
+            if (errors.length > 0) {
+                return res.status(400).json({ message: "Some entries were not added due to errors.", errors });
+            }
+    
+            return res.status(201).json({ message: "All camping location types added successfully." });
+        } catch (error) {
+            console.log("Error adding camping location types:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    getCampsiteLocationTypes:async(req,res)=>{
+        try {
+            const types = await CampingLocationType.find({});
+            return res.status(200).json(types);
+        } catch (error) {
+            console.log("Error retrieving camping location types:", error);
+            return res.status(500).json({ message: error.message });
         }
     }
 }
