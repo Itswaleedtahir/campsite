@@ -44,10 +44,12 @@ const campsiteSchema = new Schema({
     required: false
   },
   "amenities": [{
-    type: String
+    type: mongoose.Schema.Types.ObjectId, // Use MongoDB ObjectId to reference users
+    ref: 'Amenity'  // Optional: only if you have a User model and want to create relationships
   }],
   "specialFeatures": [{
-    type: String
+    type: mongoose.Schema.Types.ObjectId, // Use MongoDB ObjectId to reference users
+    ref: 'SpecialFeature'  // Optional: only if you have a User model and want to create relationships
   }],
   "rulesAndRegulations": [{
     type: String

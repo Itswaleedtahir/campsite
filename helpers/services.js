@@ -24,7 +24,7 @@ const s3 = new AWS.S3({
 
 
 const methods = {
-  sendResetPasswordMail: async (email, token, res) => {
+  sendResetPasswordMail: async (email, otp, res) => {
     try {
       const info = await transporter.sendMail({
         from: process.env.BREVO_SENDER,
@@ -32,9 +32,7 @@ const methods = {
         subject: "Reset your Password",
         text: "Reset your forgotten Password",
         html: `<p>Dear User,<br><br>
-        We received a request to reset your password. Click the link below to choose a new password:<br><br>
-        <button><a href="https://yourapp.com/reset-password?token=${token}">Reset Password</a></button><br><br>
-        If you did not request a password reset, please ignore this email.<br><br>
+        Thank you for registering. Please enter the following OTP to reset your password: <strong>${otp}</strong><br><br>
         Thank you,<br>
         The Team</p>`,
       });

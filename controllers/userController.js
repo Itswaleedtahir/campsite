@@ -243,13 +243,14 @@ let methods = {
           success: true,
         });
       }
-      let randomString = randomstring.generate();
+       // Generate a new OTP
+       const newOtp = crypto.randomInt(1000, 9999) // Generate a 6-digit OTP
       let updateUser = await User.findOneAndUpdate(
         { email: email },
-        { $set: { resetToken: randomString } },
+        { $set: { otp: newOtp } },
         { new: true }
       );
-      services.sendResetPasswordMail(findUser.email, randomString);
+      services.sendResetPasswordMail(findUser.email, newOtp);
       res.status(200).json({
         msg: "Reset Email Have been sent",
         success: true,
@@ -263,11 +264,11 @@ let methods = {
   },
   resetPassword: async (req, res) => {
     try {
-      let token = req.query.token;
-      let findUser = await User.findOne({ resetToken: token });
+      let email = req.body.email;
+      let findUser = await User.findOne({ email: email });
       if (!findUser) {
         return res.status(200).json({
-          msg: "Link have been expired",
+          msg: "User not found",
           success: true,
         });
       }
@@ -282,7 +283,7 @@ let methods = {
       let newPassword = await bcrypt.hash(password, 10);
       let user = await User.findByIdAndUpdate(
         { _id: findUser._id },
-        { $set: { password: newPassword, resetToken: "" } },
+        { $set: { password: newPassword, otp: "" } },
         { new: true }
       );
       return res.status(200).json({
