@@ -240,7 +240,7 @@ let methods = {
       if (!findUser) {
         return res.status(404).json({
           msg: "User with this Email does not exist",
-          success: true,
+          success: false,
         });
       }
        // Generate a new OTP
@@ -251,12 +251,12 @@ let methods = {
         { new: true }
       );
       services.sendResetPasswordMail(findUser.email, newOtp);
-      res.status(200).json({
+     return res.status(200).json({
         msg: "Reset Email Have been sent",
         success: true,
       });
     } catch (error) {
-      res.status(500).json({
+     return res.status(500).json({
         msg: error.message,
         success: false,
       });
