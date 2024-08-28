@@ -536,8 +536,19 @@ let methods = {
           _id: findUser._id,
           email:findUser.email,
         });
+        let result = {
+          user: {
+            _id: findUser._id,
+            email:findUser.email,
+            subscriptionStatus:findUser.subscriptionStatus,
+            isPaid:findUser.isPaid,
+            firstLogin:findUser.firstLogin,
+            subscriptionId:findUser.subscriptionId,
+            imageUrl: findUser.imageUrl || "",
+          }
+        };
 
-        return res.status(200).send({message:"User exist",token: access_token,isExist:true })
+        return res.status(200).send({message:"User exist",token: access_token,isExist:true ,result:result})
       }else {
         const referralCode = crypto.randomBytes(8).toString('hex');
         const newUser = new User({
@@ -554,7 +565,18 @@ let methods = {
           _id: savedUser._id,
           email: savedUser.email,
         });
-        return res.status(201).json({ message: "User created", token: access_token, isExist:false });
+        let result = {
+          user: {
+            _id: savedUser._id,
+            email:savedUser.email,
+            subscriptionStatus:savedUser.subscriptionStatus,
+            isPaid:savedUser.isPaid,
+            firstLogin:savedUser.firstLogin,
+            subscriptionId:savedUser.subscriptionId,
+            imageUrl: savedUser.imageUrl || "",
+          }
+        };
+        return res.status(201).json({ message: "User created", token: access_token, isExist:false,result:result });
       }
     
     } catch (error) {
