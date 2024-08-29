@@ -3,9 +3,7 @@ let bcrypt = require("bcrypt");
 const crypto = require('crypto');
 let utils = require("../utils/index");
 const services = require("../helpers/services");
-const randomstring = require("randomstring");
-const {OAuth2Client} = require('google-auth-library');
-const client = new OAuth2Client();
+const axios = require('axios');
 
 let methods = {
   addUser: async (req, res) => {
@@ -508,25 +506,23 @@ let methods = {
   },
   googleVerify:async(req,res)=>{
     try {
-      const {tokenId}=req.body
-      const client = new OAuth2Client(process.env.CLIENT_ID);
-
-      const ticket = await client.verifyIdToken({
-        idToken: tokenId,
-        audience: process.env.CLIENT_ID,
+      const {accessToken}=req.body
+      const response = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       });
-    
-      const response = ticket.getPayload();
-    
-      if (response.iss !== 'accounts.google.com' && response.aud !== process.env.CLIENT_ID)
-        return res.status(400).json({ status: 'error', error: 'Bad Request' });
+
+      console.log('Response of Google', response.data);
+      console.log('Google email is', response.data.email);
     
       const user = {
-        email: response.email,
-        image: response.picture,
-        social_id: response.sub,
-        first_name: response.given_name,
-        last_name: response.family_name,
+        email: response.data.email,
+        image: response.data.picture,
+        social_id: response.data.id,
+        first_name: response.data.given_name,
+        last_name: response.data.family_name,
+        password: `${response.data.email}_${response.data.id}`
       };
       const findUser = await User.findOne({
         googleId:user.social_id
@@ -544,7 +540,7 @@ let methods = {
             isPaid:findUser.isPaid,
             firstLogin:findUser.firstLogin,
             subscriptionId:findUser.subscriptionId,
-            imageUrl: findUser.imageUrl || "",
+            imageUrl: findUser.image,
           }
         };
 
@@ -556,8 +552,9 @@ let methods = {
           googleId: user.social_id,
           firstname: user.first_name,
           lastname: user.last_name,
-          profilePicture: user.image,
-          referralCode:referralCode
+          image: user.image,
+          referralCode:referralCode,
+          password:user.password
         });
   
         const savedUser = await newUser.save();
@@ -565,6 +562,7 @@ let methods = {
           _id: savedUser._id,
           email: savedUser.email,
         });
+        console.log("user",savedUser)
         let result = {
           user: {
             _id: savedUser._id,
@@ -573,7 +571,7 @@ let methods = {
             isPaid:savedUser.isPaid,
             firstLogin:savedUser.firstLogin,
             subscriptionId:savedUser.subscriptionId,
-            imageUrl: savedUser.imageUrl || "",
+            imageUrl: savedUser.image,
           }
         };
         return res.status(201).json({ message: "User created", token: access_token, isExist:false,result:result });
