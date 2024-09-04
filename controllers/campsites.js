@@ -303,6 +303,25 @@ let methods = {
             console.log("Error retrieving special features:", error);
             return res.status(500).json({ message: error.message });
         }
+    },
+    getAllDataForFilters: async(req,res)=>{
+        try {
+            const amenities = await Amenity.find();
+            const locationTypes = await CampingLocationType.find();
+            const campsiteTypes = await CampsiteType.find();
+            const specialFeatures = await SpecialFeature.find();
+    
+            const result = {
+                amenities: amenities,
+                locationTypes: locationTypes,
+                campsiteTypes: campsiteTypes,
+                specialFeatures: specialFeatures
+            };
+    
+            res.json(result);
+        } catch (error) {
+            res.status(500).send({ message: 'Error fetching data', error: error });
+        }
     }
 }
 

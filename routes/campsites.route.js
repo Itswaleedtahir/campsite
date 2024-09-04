@@ -14,6 +14,7 @@ router.post('/amenities', camsitesController.addAmenity);
 router.get('/amenities', camsitesController.getAmenity);
 router.post('/specialFeatures', camsitesController.addSpecialFeature);
 router.get('/specialFeatures', camsitesController.getSpecialFeatures);
+router.get('/getAllDataForFilters', camsitesController.getAllDataForFilters);
 router.put('/campsites/:id', camsitesController.updateCampsite);
 router.get('/getSingleCampsite/:id', camsitesController.getSingleCampSite);
 module.exports = router;
