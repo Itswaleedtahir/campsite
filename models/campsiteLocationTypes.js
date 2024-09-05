@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const campingLocationTypeSchema = new Schema({
-  type: {
+  name: {
     type: String,
     required: true,
     unique: true // Ensure no duplicate location types

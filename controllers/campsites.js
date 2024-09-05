@@ -186,14 +186,14 @@ let methods = {
     },
     addCampsiteTypes: async (req, res) => {
         try {
-            const types = req.body.types; // Expect an array of types
+            const types = req.body.names; // Expect an array of types
             if (!types || !Array.isArray(types)) {
                 return res.status(400).json({ message: "Invalid input. Please provide an array of campsite types." });
             }
 
             // Use a loop or bulk operation to insert types
-            const insertPromises = types.map(type => {
-                const newType = new CampsiteType({ type });
+            const insertPromises = types.map(name => {
+                const newType = new CampsiteType({ name });
                 return newType.save().catch(err => err.message); // Handle individual save errors
             });
 
@@ -222,13 +222,13 @@ let methods = {
     },
     addCampsiteLocationTypes: async (req, res) => {
         try {
-            const types = req.body.types; // Expect an array of types
+            const types = req.body.names; // Expect an array of types
             if (!types || !Array.isArray(types)) {
                 return res.status(400).json({ message: "Invalid input. Please provide an array of camping location types." });
             }
 
-            const insertPromises = types.map(type => {
-                const newType = new CampingLocationType({ type });
+            const insertPromises = types.map(name => {
+                const newType = new CampingLocationType({ name });
                 return newType.save().catch(err => err.message); // Handle individual save errors
             });
 
