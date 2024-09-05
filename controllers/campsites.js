@@ -170,12 +170,17 @@ let methods = {
                 ...(req.body.campingLocationType && { campingLocationType: { $in: req.body.campingLocationType } }),
                 ...(req.body.campsiteType && { campsiteType: { $in: req.body.campsiteType } }),
                 ...(req.body.price && { price: { $gte: req.body.price.min, $lte: req.body.price.max } }),
-                ...(req.body.averageRating && { 'reviewStats.averageRating': { $gte: req.body.averageRating } }),
+                ...(req.body.averageRating && {
+                    'reviewStats.averageRating': {
+                        $gte: req.body.averageRating.min,
+                        $lte: req.body.averageRating.max
+                    }
+                }),
                 ...(req.body.amenities && { amenities: { $in: req.body.amenities } }),
                 ...(req.body.specialFeatures && { specialFeatures: { $in: req.body.specialFeatures } }),
                 ...(req.body.rulesAndRegulations && { rulesAndRegulations: { $all: req.body.rulesAndRegulations } }),
             };
-
+    
             const results = await Campsites.find(searchQuery).populate('peopleJoined').populate('amenities')
             .populate('specialFeatures');
             return res.status(200).json(results);
@@ -184,6 +189,7 @@ let methods = {
             return res.status(500).json({ message: error.message });
         }
     },
+    
     addCampsiteTypes: async (req, res) => {
         try {
             const types = req.body.names; // Expect an array of types
