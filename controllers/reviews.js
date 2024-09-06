@@ -28,7 +28,7 @@ let methods = {
 
         const savedReview = await newReview.save();
 
-        
+
         // Calculate reward points based on review content
         let rewardPoints = 1; // Base point for adding a review with text
         if (req.body.imageUrl && req.body.imageUrl.length > 0) rewardPoints += 2; // Additional points for image
@@ -63,52 +63,70 @@ let methods = {
     }
 },
 
-  
-  getReviewsForSingleCampsites: async(req, res) => {
+getReviewsForSingleCampsites: async(req, res) => {
     try {
         const campsiteId = req.params.campsiteId;
         console.log("id", campsiteId);
 
-        // Aggregate to get ratings summary and overall stats
+        // Aggregate to get ratings summary
         const reviewsData = await Review.aggregate([
             { $match: { campsiteId: new mongoose.Types.ObjectId(campsiteId) } },
             {
                 $group: {
-                    _id: null, // Group all to calculate total stats
-                    totalReviews: { $sum: 1 },
-                    totalRatingValue: { $sum: "$rating" },
-                    ratings: {
-                        $push: {
-                            rating: "$rating",
-                            count: 1
-                        }
-                    }
-                }
-            },
-            {
-                $unwind: "$ratings"
-            },
-            {
-                $group: {
-                    _id: "$ratings.rating",
-                    count: { $sum: "$ratings.count" }
+                    _id: "$rating",
+                    count: { $sum: 1 }
                 }
             }
         ]);
 
-        // Compute the average rating
-        const totalReviews = reviewsData.reduce((acc, curr) => acc + curr.count, 0);
-        const totalRatingValue = reviewsData.reduce((acc, curr) => acc + (curr._id * curr.count), 0);
-        const averageRating = totalRatingValue / totalReviews;
+        // Initialize ratings summary with zeros for all possible ratings from 1 to 5
+        const ratingsSummary = {
+            one: 0,
+            two: 0,
+            three: 0,
+            four: 0,
+            five: 0
+        };
 
-        // Format ratings summary
-        const ratingsSummary = {};
+        // Populate ratings summary with actual counts from reviewsData
         reviewsData.forEach(item => {
-            ratingsSummary[item._id] = item.count;
+            switch (item._id) {
+                case 1:
+                    ratingsSummary.one = item.count;
+                    break;
+                case 2:
+                    ratingsSummary.two = item.count;
+                    break;
+                case 3:
+                    ratingsSummary.three = item.count;
+                    break;
+                case 4:
+                    ratingsSummary.four = item.count;
+                    break;
+                case 5:
+                    ratingsSummary.five = item.count;
+                    break;
+            }
         });
 
+        // Calculate total reviews and total rating value
+        const totalReviews = Object.values(ratingsSummary).reduce((acc, count) => acc + count, 0);
+        const totalRatingValue = Object.entries(ratingsSummary).reduce((acc, [key, count]) => {
+            const rating = {
+                one: 1,
+                two: 2,
+                three: 3,
+                four: 4,
+                five: 5
+            }[key];
+            return acc + (rating * count);
+        }, 0);
+
+        // Compute the average rating
+        const averageRating = totalReviews > 0 ? (totalRatingValue / totalReviews).toFixed(2) : 0;
+
         // Find reviews and populate user details
-        const reviews = await Review.find({ campsiteId: campsiteId }).populate('userId');  // Populate user
+        const reviews = await Review.find({ campsiteId: new mongoose.Types.ObjectId(campsiteId) }).populate('userId');
 
         res.status(200).send({
             reviews: reviews,
@@ -122,6 +140,8 @@ let methods = {
         res.status(500).send({ message: 'Error retrieving reviews', error: error.message });
     }
 }
+
+
 
 }
 module.exports = methods
