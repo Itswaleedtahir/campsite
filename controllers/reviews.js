@@ -28,6 +28,7 @@ let methods = {
 
         const savedReview = await newReview.save();
 
+        
         // Calculate reward points based on review content
         let rewardPoints = 1; // Base point for adding a review with text
         if (req.body.imageUrl && req.body.imageUrl.length > 0) rewardPoints += 2; // Additional points for image
