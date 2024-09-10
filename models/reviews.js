@@ -29,6 +29,10 @@ const reviewSchema = new Schema({
   videos: {
     type: String // URL or path to the video file
   },
+  likes:[{
+        type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

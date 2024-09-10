@@ -1,6 +1,7 @@
 const Review = require("../models/reviews")
 const User = require("../models/userModel")
 const Campsite = require("../models/campsites")
+const Reply = require("../models/reviewReply")
 const mongoose = require('mongoose');
 
 
@@ -139,9 +140,63 @@ getReviewsForSingleCampsites: async(req, res) => {
         console.log("error", error);
         res.status(500).send({ message: 'Error retrieving reviews', error: error.message });
     }
+},
+
+likeReview: async(req,res)=>{
+    try {
+        const reviewId = req.params.id;
+        let userId = req.token._id;
+        // Add userId to the likes array if it's not already there
+        const result = await Review.findByIdAndUpdate(reviewId, {
+            $addToSet: { likes: userId }
+        }, { new: true }); // Returns the updated document
+
+        if (!result) {
+            return res.status(404).send('Review not found');
+        }
+       return res.status(200).json(result);
+    } catch (error) {
+        console.log("error",error)
+       return res.status(500).send(error);
+    }
+},
+
+replyReview:async(req,res)=>{
+    const reviewId = req.params.id;
+    let userId = req.token._id;
+    const { text } = req.body;
+
+    if (!text || !reviewId || !userId) {
+        return res.status(400).send('All fields are required');
+    }
+
+    const newReply = new Reply({
+        text,
+        reviewId,
+        userId
+    });
+
+    try {
+        const savedReply = await newReply.save();
+       return res.status(201).json(savedReply);
+    } catch (error) {
+        console.log("error",error)
+        return res.status(500).send(error);
+    }
+},
+
+getReviewReply: async(req,res)=>{
+    const reviewId = req.params.id;
+
+    try {
+        const replies = await Reply.find({ reviewId }).populate('userId'); // Populating 'userId' to fetch user details, adjust as needed
+        if (replies.length === 0) {
+            return res.status(404).send('No replies found for this review');
+        }
+        res.status(200).json(replies);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
 }
-
-
-
 }
 module.exports = methods
