@@ -127,10 +127,18 @@ getReviewsForSingleCampsites: async(req, res) => {
         const averageRating = totalReviews > 0 ? (totalRatingValue / totalReviews).toFixed(2) : 0;
 
         // Find reviews and populate user details
-        const reviews = await Review.find({ campsiteId: new mongoose.Types.ObjectId(campsiteId) }).populate('userId');
+        const reviews = await Review.find({ campsiteId: new mongoose.Types.ObjectId(campsiteId) })
+            .populate('userId')
+            .lean(); // Use lean to improve performance as it returns plain JavaScript objects
+
+        // Asynchronously populate replies for each review
+        const reviewsWithReplies = await Promise.all(reviews.map(async review => {
+            const replies = await Reply.find({ reviewId: review._id }).populate('userId');
+            return { ...review, replies };
+        }));
 
         res.status(200).send({
-            reviews: reviews,
+            reviews: reviewsWithReplies,
             ratingsSummary: ratingsSummary,
             totalReviews: totalReviews,
             totalRatingValue: totalRatingValue,
@@ -141,6 +149,7 @@ getReviewsForSingleCampsites: async(req, res) => {
         res.status(500).send({ message: 'Error retrieving reviews', error: error.message });
     }
 },
+
 
 likeReview: async(req,res)=>{
     try {
