@@ -381,6 +381,14 @@ let methods = {
       });
     }
   },
+  getAllUsers:async (req,res)=>{
+    try {
+      const users = await User.find({});
+      return res.status(201).json(users);
+  } catch (error) {
+     return res.status(500).json({ error: error.toString() });
+  }
+  },
   updateUser: async (req, res) => {
     try {
         let userId = req.query.id;
