@@ -169,6 +169,24 @@ likeReview: async(req,res)=>{
        return res.status(500).send(error);
     }
 },
+unlikeReview: async(req,res)=>{
+    try {
+        const reviewId = req.params.id;
+        let userId = req.token._id;
+        // Remove userId from the likes array
+        const result = await Review.findByIdAndUpdate(reviewId, {
+            $pull: { likes: userId }
+        }, { new: true }); // Returns the updated document
+
+        if (!result) {
+            return res.status(404).send('Review not found');
+        }
+        return res.status(200).json(result);
+    } catch (error) {
+        console.log("error", error)
+        return res.status(500).send(error);
+    }
+},
 
 replyReview:async(req,res)=>{
     const reviewId = req.params.id;
