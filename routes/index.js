@@ -7,6 +7,7 @@ const rewardItems = require("./rewardItems.route")
 const reviewRoutes = require("./reviews.route")
 const levelRoutes = require("./levels.route")
 const blogRoutes = require("./blog.route")
+const adminRoutes = require("./admin.route")
 const express = require('express')
 router.use("/user", userRoutes);
 router.use("/community", communityRoute);
@@ -16,4 +17,5 @@ router.use("/review",reviewRoutes)
 router.use("/items",rewardItems)
 router.use("/levels",levelRoutes)
 router.use("/blogs",blogRoutes)
+router.use("/admin",adminRoutes)
 module.exports = router;
