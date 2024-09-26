@@ -33,6 +33,11 @@ var admin = new Schema({
     },
     "resetToken": {
         type: String
+    },
+    "role": { // Role to differentiate super admin and regular admins
+        type: String,
+        enum: ['super_admin', 'admin'],
+        default: 'admin'
     }
 });
 

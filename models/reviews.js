@@ -33,6 +33,7 @@ const reviewSchema = new Schema({
         type: Schema.Types.ObjectId,
     ref: 'User'
   }],
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }, // New field
   createdAt: {
     type: Date,
     default: Date.now

@@ -4,30 +4,45 @@ const CampsiteType = require('../models/campsiteTypes');
 const CampingLocationType = require("../models/campsiteLocationTypes")
 const Amenity = require("../models/amenity")
 const SpecialFeature = require("../models/specialFeatures")
+const utils = require("../utils/index")
 
 let methods = {
     fileUploadS3: async (req, res, next) => {
         try {
-            console.log("req.files ", req.files)
-            console.log("req.files.file ", req.files.file)
-            console.log("req.files.file.mimetype ", req.files.file.mimetype)
-            console.log("req.body ", req.body)
-            let typeFile;
-            if (req.files.file.mimetype.includes("audio")) {
-                typeFile = "Audio"
-            } else if (req.files.file.mimetype.includes("application") && !req.files.file.mimetype.includes("rar") && !req.files.file.mimetype.includes("zip") && !req.files.file.name.includes("rar") && !req.files.file.name.includes("zip")) {
-                typeFile = "Document"
-            } else if (req.files.file.mimetype.includes("image")) {
-                typeFile = "Image"
-            } else if (req.files.file.mimetype.includes("video")) {
-                typeFile = "Video"
+            console.log("req.files ", req.files);
+            const files = req.files.file; // Extract the array of files
+            if (!Array.isArray(files)) {
+                return res.status(400).json({ success: false, message: "No files uploaded" });
             }
-            //console.log("process.env ", process.env)
-            if (req.body.type === "Private") {
-                const fileLocation = await services.uploadFile(req.files.file, "Private");
-                console.log("fileLocation ", fileLocation)
-                console.log("req.userId ", req.userId)
-                var url = fileLocation.Location
+            let uploadedFiles = [];
+            for (let file of files) {
+                console.log("Processing file: ", file);
+                // Determine file type based on mimetype
+                let typeFile;
+                if (file.mimetype.includes("audio")) {
+                    typeFile = "Audio";
+                } else if (
+                    file.mimetype.includes("application") &&
+                    !file.mimetype.includes("rar") &&
+                    !file.mimetype.includes("zip") &&
+                    !file.name.includes("rar") &&
+                    !file.name.includes("zip")
+                ) {
+                    typeFile = "Document";
+                } else if (file.mimetype.includes("image")) {
+                    typeFile = "Image";
+                } else if (file.mimetype.includes("video")) {
+                    typeFile = "Video";
+                }
+                // Upload file to S3 (Public or Private)
+                const fileLocation = await utils.uploadFile(
+                    file,
+                    req.body.type || "Public"
+                );
+                console.log("fileLocation ", fileLocation);
+                console.log("req.userId ", req.userId);
+    
+                let url = fileLocation.Location;
                 let urlNew, urlPath;
                 if (process.env.CDN_URL) {
                     urlNew = url.replace(process.env.S3_URL, process.env.CDN_URL);
@@ -35,44 +50,36 @@ let methods = {
                     urlPath = urlNew?.replace(process.env.CDN_URL, "");
                 } else {
                     urlNew = url;
-                    urlPath = url
+                    urlPath = url;
                     urlPath = urlNew.replace(process.env.S3_URL, "");
                 }
-                console.log("urlNew ", urlNew)
-                console.log("urlPath ", urlPath)
-
-                // returning fileupload location
-                return res.status(200).json({ fileLocation: fileLocation.Location, urlCDN: urlNew, urlPath: urlPath });
-            } else if (req.body.type === "Public") {
-                const fileLocation = await services.uploadFile(req.files.file, "Public");
-                console.log("fileLocation ", fileLocation)
-                console.log("req.userId ", req.userId)
-                var url = fileLocation.Location
-                let urlNew, urlPath;
-                if (process.env.CDN_URL) {
-                    urlNew = url.replace(process.env.S3_URL, process.env.CDN_URL);
-                    urlNew = urlNew.replace(process.env.S3_URL2, process.env.CDN_URL);
-                    urlPath = urlNew?.replace(process.env.CDN_URL, "");
-                } else {
-                    console.log("irllll", process.env.S3_URL)
-                    urlNew = url;
-                    urlPath = url
-                    urlPath = urlNew.replace(process.env.S3_URL, "");
-                }
-                console.log("urlNew ", urlNew)
-                console.log("urlPath ", urlPath)
-
-                // returning fileupload location
-                return res.status(200).json({ fileLocation: fileLocation.Location, urlCDN: urlNew, urlPath: urlPath });
+                console.log("urlNew ", urlNew);
+                console.log("urlPath ", urlPath);
+    
+                uploadedFiles.push({
+                    fileLocation: url,
+                    urlCDN: urlNew,
+                    urlPath: urlPath,
+                    typeFile: typeFile,
+                    success: true,
+                    message: "File uploaded successfully"
+                });
             }
+            // Return response with all uploaded file locations
+            return res.status(200).json({
+                uploadedFiles,
+                success: true,
+                message: "Files uploaded successfully"
+            });
         } catch (error) {
-            console.error('Error handling webhook:', error);
+            console.error("Error handling file upload:", error);
             return res.status(500).json({
                 success: false,
                 message: "Internal Server Error"
-            })
+            });
         }
     },
+    
     createCampsite: async (req, res) => {
         try {
 

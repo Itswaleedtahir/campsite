@@ -78,6 +78,7 @@ let methods = {
             let access_token = await utils.issueToken({
               _id: admin._id,
               email:admin.email,
+              role:admin.role
             });
         
             let result = {
@@ -205,6 +206,53 @@ let methods = {
               success: false,
             });
           }
+    },
+    deleteAdmin:async(req,res)=>{
+      try {
+        let adminId = req.token._id
+        console.log("oid",adminId)
+        const superAdminCheck = await Admin.findOne({_id:adminId})
+        console.log("admin",superAdminCheck)
+        if(superAdminCheck != "super_admin"){
+          return res.status(401).json({
+            message:"You cannot perform this operation"
+          })
+        }
+        const { id } = req.params;
+        const admin = await Admin.findByIdAndDelete(id);
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: 'Admin not found'
+            });
+        }
+       return res.status(200).json({
+            success: true,
+            message: 'Admin deleted successfully'
+        });
+    } catch (error) {
+        console.error("Error deleting admin:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error'
+        });
+    }
+    },
+    getAdmins:async(req,res)=>{
+      try {
+        // Fetch all admins except those with the role 'super_admin'
+        const admins = await Admin.find({ role: { $ne: 'super_admin' } });
+        res.status(200).json({
+            success: true,
+            data: admins
+        });
+    } catch (error) {
+        console.error("Error fetching admins:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error'
+        });
+    }
     }
 
 }

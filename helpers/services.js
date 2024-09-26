@@ -16,10 +16,10 @@ const transporter = nodemailer.createTransport({
 // s3 config
 console.log("process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY ", process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY)
 const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // your AWS access id
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // your AWS access key
-    signatureVersion: 'v4',
-    region: 'us-east-1'
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID, // your AWS access id
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // your AWS access key
+  signatureVersion: 'v4',
+  region: 'us-east-1'
 });
 
 
@@ -39,37 +39,64 @@ const methods = {
       console.log("Reset Password Email sent", info.messageId);
     } catch (error) {
       console.error("Failed to send email:", error);
-    return  res.status(500).json({
+      return res.status(500).json({
         msg: "Failed to send  email",
         error: error.message || "Something went wrong."
       });
     }
   },
-  sendItemBuyEmail:async(user,contactNo,address,rewardItem,res)=>{
-      try {
-        console.log("item",user,contactNo,address)
-        const info = await transporter.sendMail({
-          from: process.env.BREVO_SENDER,
-          to: "waleedcodistan@gmail.com",
-          subject: "Reward Item Purchased",
-          text: `Reward Item Purchase by ${user.email}`,
-          html: `
+  sendCommissionNotificationEmail:async(user, commission, userInvited, res) =>{
+    try {
+      console.log("Sending commission notification to", user.email);
+      const info = await transporter.sendMail({
+        from: process.env.BREVO_SENDER,
+        to: "waleedtahirmuhammad@gmail.com",  // Use affiliate's email address
+        subject: "Detailed Commission Report",
+        text: `Commission Details for ${user.email}`,
+        html: `
+        <p>Hello ${user.email},</p>
+        <p>You have invited ${userInvited} users so far. Based on these referrals, your total commission earned to date is $${commission.toFixed(2)}.</p>
+        <p>To process your commission payout, please provide us with your payment details at your earliest convenience.</p>
+        <p>Thank you for your continued support and promotion of our products!</p>
+        <p>Best regards,</p>
+        <p><strong>Team Campsites</strong></p>
+    `,
+      });
+      console.log("Commission notification email sent", info.messageId);
+    } catch (error) {
+      console.error("Failed to send commission notification email:", error);
+      return res.status(500).json({
+        msg: "Failed to send commission notification email",
+        error: error.message || "Something went wrong."
+      });
+    }
+  }
+  ,
+  sendItemBuyEmail: async (user, contactNo, address, rewardItem, res) => {
+    try {
+      console.log("item", user, contactNo, address)
+      const info = await transporter.sendMail({
+        from: process.env.BREVO_SENDER,
+        to: "waleedcodistan@gmail.com",
+        subject: "Reward Item Purchased",
+        text: `Reward Item Purchase by ${user.email}`,
+        html: `
           <p>User email is ${user.email}.</p>
           <p>Item: ${rewardItem.name}</p>
           <p>Contact No: ${contactNo}</p>
           <p>Address: ${address}</p>
       `,
-        });
-        console.log("Reset Password Email sent", info.messageId);
-      } catch (error) {
-        console.error("Failed to send email:", error);
-     return  res.status(500).json({
+      });
+      console.log("Reset Password Email sent", info.messageId);
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      return res.status(500).json({
         msg: "Failed to send  email",
         error: error.message || "Something went wrong."
       });
-      }
+    }
   },
-  sendVerificationEmail :  async (email, otp, res) => {
+  sendVerificationEmail: async (email, otp, res) => {
     try {
       const info = await transporter.sendMail({
         from: process.env.BREVO_SENDER,
@@ -90,7 +117,7 @@ const methods = {
       });
     }
   },
-  ResendVerificationEmail :  async (email, otp, res) => {
+  ResendVerificationEmail: async (email, otp, res) => {
     try {
       const info = await transporter.sendMail({
         from: process.env.BREVO_SENDER,
@@ -111,7 +138,7 @@ const methods = {
       });
     }
   },
-    uploadFile: async (file, access)=> {
+  uploadFile: async (file, access) => {
     console.log("file ", file);
     file.name = file.name.replace(/\s/g, '');
     file.name = file.name.replace('#', '');
@@ -131,40 +158,40 @@ const methods = {
     fileName = `${fileNameWithoutExtension}${fileExtension}`;
     console.log("fileName ", fileName)
     if (access === "Public") {
-        const params = {
-            Bucket: process.env.AWS_BUCKET,
-            Key: `${fileName}`,
-        };
-        console.log("params ", params);
-        const uploadParams = {
-            Bucket: process.env.AWS_BUCKET,
-            Key: `${fileName}`,
-            ContentDisposition: 'inline',
-            ContentType: file.mimetype,
-            Body: file.data,
-            ACL: "public-read",
-        };
-        const data = await s3.upload(uploadParams).promise();
-        console.log("data ", data);
-        return data;
+      const params = {
+        Bucket: process.env.AWS_BUCKET,
+        Key: `${fileName}`,
+      };
+      console.log("params ", params);
+      const uploadParams = {
+        Bucket: process.env.AWS_BUCKET,
+        Key: `${fileName}`,
+        ContentDisposition: 'inline',
+        ContentType: file.mimetype,
+        Body: file.data,
+        ACL: "public-read",
+      };
+      const data = await s3.upload(uploadParams).promise();
+      console.log("data ", data);
+      return data;
     } else if (access === "Private") {
-        const params = {
-            Bucket: process.env.AWS_BUCKET,
-            Key: `${fileName}`,
-        };
-        console.log("params ", params);
-        const uploadParams = {
-            Bucket: process.env.AWS_BUCKET,
-            Key: `${fileName}`,
-            ContentDisposition: 'inline',
-            ContentType: file.mimetype,
-            Body: file.data,
-        };
-        const data = await s3.upload(uploadParams).promise();
-        console.log("data ", data);
-        return data;
+      const params = {
+        Bucket: process.env.AWS_BUCKET,
+        Key: `${fileName}`,
+      };
+      console.log("params ", params);
+      const uploadParams = {
+        Bucket: process.env.AWS_BUCKET,
+        Key: `${fileName}`,
+        ContentDisposition: 'inline',
+        ContentType: file.mimetype,
+        Body: file.data,
+      };
+      const data = await s3.upload(uploadParams).promise();
+      console.log("data ", data);
+      return data;
     }
-}
+  }
 };
 
 

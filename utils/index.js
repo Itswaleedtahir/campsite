@@ -2,9 +2,20 @@ const Bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 let secret = "devgate9999";
+const AWS = require("aws-sdk")
 // const fs = require('fs');
 const formidable = require("formidable");
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+const s3 = new AWS.S3({
+  apiVersion: "2006-03-01", // Optional, use the latest API version
+  region: process.env.AWS_REGION, // Ensure the region is explicitly passed
+});
 let methods = {
+  
   hashPassword: (password) => {
     return new Promise((resolve, reject) => {
       Bcrypt.hash(password, 10, (err, passwordHash) => {
@@ -69,36 +80,31 @@ let methods = {
       next();
     });
   },
-  uploadFileto3: (file) => {
-    var ext = file.mimetype.split("/").pop();
-    return new Promise(function (resolve, reject) {
-      var stream;
-      if (file.path) {
-        stream = fs.createReadStream(file.path);
-      }
-      if (file.filepath) {
-        stream = fs.createReadStream(file.filepath);
-      } else {
-        stream = file.data;
-      }
-      // if (!name) {
-      let name = Date.now().toString() + "." + ext;
-      // }
-      var data = {
-        Key: name,
-        ACL: "public-read",
-        Body: stream,
-        ContentType: file.mimetype,
-        Bucket: BUCKET_NAME,
-      };
-      s3.upload(data, function (err, data) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
-    });
+  uploadFile: async (file, access) => {
+    file.name = file.name.replace(/\s/g, "").replace("#", "").replace('"', "");
+    let fileName = file.name;
+    const fileExtension = file.name.substring(file.name.lastIndexOf("."));
+    const fileNameWithoutExtension = `fileupload/${Date.now()}/${file.name.substring(
+      0,
+      file.name.lastIndexOf(".")
+    )}`;
+    fileName = `${fileNameWithoutExtension}${fileExtension}`;
+    const uploadParams = {
+      Bucket: process.env.AWS_BUCKET,
+      Key: fileName,
+      ContentDisposition: "inline",
+      ContentType: file.mimetype,
+      Body: file.data,
+      ACL: access === "Public" ? "public-read" : undefined, // Make the file public if access is "Public"
+    };
+    try {
+      const data = await s3.upload(uploadParams).promise();
+      console.log("File uploaded successfully: ", data);
+      return data;
+    } catch (error) {
+      console.error("Error uploading file: ", error);
+      throw new Error("File upload failed");
+    }
   },
 };
 module.exports = methods;

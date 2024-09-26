@@ -1,5 +1,6 @@
 const plan = require('../models/Plans');
 const Campsite = require('../models/campsites')
+const Affiliate = require("../models/Affiliate")
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/userModel");
 
@@ -20,6 +21,7 @@ createModel :async(req,res)=>{
         console.log("customerlist",customers)
         const ifUser = await User.findOne({ email: email })
         console.log("user",ifUser)
+        
         if (ifUser?.subscriptionStatus == 'active') {
             return res.status(400).send({
                 success: true,
@@ -27,7 +29,13 @@ createModel :async(req,res)=>{
                 user: ifUser,
             });
         }
-        
+          // Check for the promo code and find the corresponding affiliate
+          let affiliatedUser = null;
+          if (ifUser.referredBy) {
+              affiliatedUser = await Affiliate.findOne({ userId:ifUser.referredBy });
+          }
+          console.log("affiliate",affiliatedUser)
+
         const paymentMethod = await stripe.paymentMethods.create({
             type: 'card',
             card: {
@@ -70,6 +78,13 @@ createModel :async(req,res)=>{
                 { new: true }
             )
             console.log("updatedUser if ", updatedUser)
+               // Increment the invitedUser count in Affiliate model
+               if (affiliatedUser) {
+                await Affiliate.updateOne(
+                    { _id: affiliatedUser._id },
+                    { $inc: { userInvited: 1 } }
+                );
+            }
             return res.status(201).send({
                 success: true,
                 message: 'Subscription created',
@@ -109,6 +124,13 @@ createModel :async(req,res)=>{
                 },
                 { new: true }
             )
+             // Increment the invitedUser count in Affiliate model
+             if (affiliatedUser) {
+                await Affiliate.updateOne(
+                    { _id: affiliatedUser._id },
+                    { $inc: { userInvited: 1 } }
+                );
+            }
             console.log("updatedUser else ", updatedUser)
             return res.status(201).send({
                 success: true,

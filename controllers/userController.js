@@ -109,7 +109,8 @@ let methods = {
             console.log("referrer", referrer);
             if (referrer) {
                 referrer.rewardPoints += 5; // Assuming 5 points per successful referral
-                
+                 // Save referrer's updated points
+                 await referrer.save();
                 // Update the referrer's level based on the new points
                 await referrer.updateUserLevel();
             }
