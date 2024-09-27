@@ -10,9 +10,13 @@ let methods = {
     fileUploadS3: async (req, res, next) => {
         try {
             console.log("req.files ", req.files);
-            const files = req.files.file; // Extract the array of files
-            if (!Array.isArray(files)) {
+            let files = req.files.file; // Extract the files object
+            if (!files) {
                 return res.status(400).json({ success: false, message: "No files uploaded" });
+            }
+            // Ensure files is always an array
+            if (!Array.isArray(files)) {
+                files = [files];
             }
             let uploadedFiles = [];
             for (let file of files) {
@@ -78,7 +82,8 @@ let methods = {
                 message: "Internal Server Error"
             });
         }
-    },
+    }
+    ,
     
     createCampsite: async (req, res) => {
         try {

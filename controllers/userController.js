@@ -1,5 +1,6 @@
 let User = require("../models/userModel");
 let bcrypt = require("bcrypt");
+const Campsites = require("../models/campsites")
 const crypto = require('crypto');
 let utils = require("../utils/index");
 const services = require("../helpers/services");
@@ -450,6 +451,11 @@ let methods = {
             { $addToSet: { favourites: campsiteId } },
             { new: true } // Return the updated document
         );
+        const updatedCampsite = await Campsites.findByIdAndUpdate(
+          campsiteId,
+          { $addToSet: { wishlistUsers: userId } },
+          { new: true }
+      );
 
         if (!updatedUser) {
             return res.status(404).send({ message: 'User not found' });
@@ -476,6 +482,11 @@ let methods = {
             { $addToSet: { wishlist: campsiteId } },
             { new: true } // Return the updated document
         );
+        const updatedCampsite = await Campsites.findByIdAndUpdate(
+          campsiteId,
+          { $addToSet: { wishlistUsers: userId } },
+          { new: true }
+      );
 
         if (!updatedUser) {
             return res.status(404).send({ message: 'User not found' });

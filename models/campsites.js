@@ -58,6 +58,10 @@ const campsiteSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
+  "wishlistUsers": [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   "price": {
     type: Number,
     required: true
