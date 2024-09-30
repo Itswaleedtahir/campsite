@@ -498,6 +498,69 @@ let methods = {
         res.status(500).send({ message: 'Error adding to favourites', error: error.message });
     }
   },
+  removeFromFavourites: async (req, res) => {
+    let userId = req.token._id;
+    console.log("id", userId);
+    const { campsiteId } = req.body;
+
+    if (!userId || !campsiteId) {
+        return res.status(400).send({ message: 'Missing user ID or campsite ID' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $pull: { favourites: campsiteId } },
+            { new: true } // Return the updated document
+        );
+        const updatedCampsite = await Campsites.findByIdAndUpdate(
+            campsiteId,
+            { $pull: { wishlistUsers: userId } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send(updatedUser);
+    } catch (error) {
+        console.log('Error removing from favourites:', error);
+        res.status(500).send({ message: 'Error removing from favourites', error: error.message });
+    }
+},
+removeFromWishlist: async (req, res) => {
+    let userId = req.token._id;
+    console.log("id", userId);
+    const { campsiteId } = req.body;
+
+    if (!userId || !campsiteId) {
+        return res.status(400).send({ message: 'Missing user ID or campsite ID' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $pull: { wishlist: campsiteId } },
+            { new: true } // Return the updated document
+        );
+        const updatedCampsite = await Campsites.findByIdAndUpdate(
+            campsiteId,
+            { $pull: { wishlistUsers: userId } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send(updatedUser);
+    } catch (error) {
+        console.log('Error removing from wishlist:', error);
+        res.status(500).send({ message: 'Error removing from wishlist', error: error.message });
+    }
+},
+
   getFavourites:async(req,res)=>{
     try {
       let userId = req.token._id;
