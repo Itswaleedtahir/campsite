@@ -80,8 +80,33 @@ const methods = {
             console.log("error", error)
             return res.status(500).json({ message: 'Server error', error: error.message });
         }
-    }
+    },
+    updateItem: async (req, res) => {
+        try {
+            const { id } = req.params; // Get item ID from URL parameters
+            const { name, image, prize } = req.body; // Get updated values from the request body
     
+            if (!name && !image && !prize) {
+                return res.status(400).json({ message: "Invalid input. Please provide at least one field to update." });
+            }
+    
+            const itemToUpdate = await item.findById(id); // Find the item by ID
+            if (!itemToUpdate) {
+                return res.status(404).json({ message: "Item not found." });
+            }
+    
+            // Update item properties if provided
+            if (name) itemToUpdate.name = name;
+            if (image) itemToUpdate.image = image;
+            if (prize) itemToUpdate.prize = prize;
+    
+            await itemToUpdate.save(); // Save the updated item
+            return res.status(200).json({ message: "Item updated successfully.", updatedItem: itemToUpdate });
+        } catch (error) {
+            console.log("Error updating item:", error);
+            return res.status(500).json({ message: 'Error updating the item', error: error.message });
+        }
+    }    
 }
 
 module.exports=methods

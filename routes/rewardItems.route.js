@@ -7,5 +7,6 @@ router.post("/createItem",itemController.createItem )
 router.post("/buyItem",authPolicy,itemController.buyItems )
 router.get("/getItem",itemController.getItems )
 router.delete("/deleteItem/:id",itemController.deleteItems)
+router.post("/updateItem/:id",itemController.updateItem)
 
 module.exports = router;
