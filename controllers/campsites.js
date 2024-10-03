@@ -288,6 +288,62 @@ let methods = {
             return res.status(500).json({ message: error.message });
         }
     },
+    getAmenity: async (req, res) => {
+        try {
+            const amenities = await Amenity.find({});
+            return res.status(200).json(amenities);
+        } catch (error) {
+            console.log("Error retrieving amenities:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    updateAmenity: async (req, res) => {
+        try {
+            const { id } = req.params; // Get amenity ID from the URL parameters
+            const { name, image } = req.body; // Get updated name and image from the request body
+    
+            if (!name && !image) {
+                return res.status(400).json({ message: "Invalid input. Please provide an amenity name or image to update." });
+            }
+    
+            const amenity = await Amenity.findById(id); // Fetch the amenity by ID
+            if (!amenity) {
+                return res.status(404).json({ message: "Amenity not found." });
+            }
+    
+            // Update amenity properties if they exist in the request
+            if (name) amenity.name = name;
+            if (image) amenity.image = image;
+    
+            await amenity.save(); // Save the updated amenity
+            return res.status(200).json({ message: "Amenity updated successfully.", amenity });
+        } catch (error) {
+            console.log("Error updating amenity:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    deleteAmenity: async (req, res) => {
+        try {
+            const { id } = req.params; // Get amenity ID from the URL parameters
+    
+            // Check if any campsite is using this amenity
+            const campsiteUsingAmenity = await Campsites.findOne({ amenities: id });
+            if (campsiteUsingAmenity) {
+                return res.status(400).json({ message: "Cannot delete amenity because it is already in use at a campsite." });
+            }
+    
+            
+        const deletionResult = await Amenity.findByIdAndDelete(id);
+        if (!deletionResult) {
+            return res.status(404).json({ message: "Amenity not found." });
+        }
+
+        return res.status(200).json({ message: "Amenity deleted successfully." });
+        } catch (error) {
+            console.log("Error deleting amenity:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },        
     addSpecialFeature: async (req, res) => {
         try {
             const name = req.body.name;
@@ -304,15 +360,6 @@ let methods = {
             return res.status(500).json({ message: error.message });
         }
     },
-    getAmenity: async (req, res) => {
-        try {
-            const amenities = await Amenity.find({});
-            return res.status(200).json(amenities);
-        } catch (error) {
-            console.log("Error retrieving amenities:", error);
-            return res.status(500).json({ message: error.message });
-        }
-    },
     getSpecialFeatures: async (req, res) => {
         try {
             const features = await SpecialFeature.find({});
@@ -322,6 +369,51 @@ let methods = {
             return res.status(500).json({ message: error.message });
         }
     },
+    updateSpecialFeature: async (req, res) => {
+        try {
+            const { id } = req.params; // Get special feature ID from URL parameters
+            const { name, image } = req.body; // Get updated name and image from request body
+    
+            if (!name && !image) {
+                return res.status(400).json({ message: "Invalid input. Please provide a name or image to update." });
+            }
+    
+            const specialFeature = await SpecialFeature.findById(id);
+            if (!specialFeature) {
+                return res.status(404).json({ message: "Special feature not found." });
+            }
+    
+            // Update properties if provided in request
+            if (name) specialFeature.name = name;
+            if (image) specialFeature.image = image;
+    
+            await specialFeature.save(); // Save the updated special feature
+            return res.status(200).json({ message: "Special feature updated successfully.", feature: specialFeature });
+        } catch (error) {
+            console.log("Error updating special feature:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },  
+    deleteSpecialFeature: async (req, res) => {
+        try {
+            const { id } = req.params; // Get special feature ID from URL parameters
+    
+            const campsitesUsingFeature = await Campsites.findOne({ specialFeatures: id });
+            if (campsitesUsingFeature) {
+                return res.status(400).json({ message: "Cannot delete special feature because it is already in use at a campsite." });
+            }
+    
+            const deletionResult = await SpecialFeature.findByIdAndDelete(id);
+        if (!deletionResult) {
+            return res.status(404).json({ message: "Special feature not found." });
+        }
+
+        return res.status(200).json({ message: "Special feature deleted successfully." });
+        } catch (error) {
+            console.log("Error deleting special feature:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },      
     getAllDataForFilters: async(req,res)=>{
         try {
             const amenities = await Amenity.find();

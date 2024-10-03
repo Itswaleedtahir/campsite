@@ -17,4 +17,8 @@ router.get('/specialFeatures', camsitesController.getSpecialFeatures);
 router.get('/getAllDataForFilters', camsitesController.getAllDataForFilters);
 router.put('/campsites/:id', camsitesController.updateCampsite);
 router.get('/getSingleCampsite/:id', camsitesController.getSingleCampSite);
+router.post('/updateAmenity/:id', camsitesController.updateAmenity);
+router.delete('/deleteAmenity/:id', camsitesController.deleteAmenity);
+router.post('/updateSpecialFeature/:id', camsitesController.updateSpecialFeature);
+router.delete('/deleteSpecialFeature/:id', camsitesController.deleteSpecialFeature);
 module.exports = router;
