@@ -164,6 +164,24 @@ let methods = {
             message: 'Internal Server Error'
         });
     }
-    }
+    },
+    getApprovedAffiliateRequests: async(req, res) => {
+        try {
+            // Fetch only affiliates whose status is 'Approved'
+            const affiliates = await Affiliate.find({ status: "Approved" }).populate('userId', 'name email'); // Adjust 'name email' to match the fields you need from User
+    
+          return res.status(200).json({
+                success: true,
+                count: affiliates.length,
+                data: affiliates
+            });
+        } catch (error) {
+            console.error("Failed to fetch approved affiliates:", error);
+           return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    }    
 }
 module.exports = methods;
