@@ -5,6 +5,7 @@ const crypto = require('crypto');
 let utils = require("../utils/index");
 const services = require("../helpers/services");
 const axios = require('axios');
+const jwt = require("jsonwebtoken");
 
 let methods = {
   addUser: async (req, res) => {
@@ -636,6 +637,7 @@ removeFromWishlist: async (req, res) => {
           firstname: user.first_name,
           lastname: user.last_name,
           image: user.image,
+          isVerified:true,
           referralCode:referralCode,
           password:user.password
         });
@@ -660,6 +662,79 @@ removeFromWishlist: async (req, res) => {
         return res.status(201).json({ message: "User created", token: access_token, isExist:false,result:result });
       }
     
+    } catch (error) {
+      console.log('Error', error);
+      return res.status(500).send({ message: 'Error', error: error.message });
+    }
+  },
+  appleLogin:async(req,res)=>{
+    try {
+      const { idToken, appleId ,first_name,last_name} = req.body;
+      const userData = jwt.decode(idToken)
+      console.log("userData",userData)
+      const email =
+      idToken === null
+        ? null
+        : jwt.decode(idToken).email == undefined
+        ? null
+        : jwt.decode(idToken).email;
+    // console.log("--> email: ", email);
+      console.log("email",email)
+      const user = await User.findOne({
+        email:email
+      })
+    if (user) {
+      console.log("insideif")
+          const access_token = await utils.issueToken({
+            _id: user.id,
+            email: user.email,
+          });
+          let result = {
+            user: {
+              _id: user._id,
+              email:user.email,
+              subscriptionStatus:user.subscriptionStatus,
+              isPaid:user.isPaid,
+              firstLogin:user.firstLogin,
+              subscriptionId:user.subscriptionId,
+              imageUrl: user.image,
+            }
+          };
+          return res.status(200).send({message:"User exist",token: access_token,isExist:true ,result:result})
+        
+    }else{
+      console.log("insideelseeee")
+      const referralCode = crypto.randomBytes(8).toString('hex');
+        const newUser = new User({
+          email: userData.email,
+          appleId:appleId,
+          firstname: first_name ?? null,  // If first_name is null, it defaults to null
+          lastname: last_name ?? null, 
+          image: userData?.image,
+          isVerified:true,
+          referralCode:referralCode,
+          password:userData?.password
+        });
+  
+        const savedUser = await newUser.save();
+        let access_token = await utils.issueToken({
+          _id: savedUser._id,
+          email: savedUser.email,
+        });
+        console.log("user",savedUser)
+        let result = {
+          user: {
+            _id: savedUser._id,
+            email:savedUser.email,
+            subscriptionStatus:savedUser.subscriptionStatus,
+            isPaid:savedUser.isPaid,
+            firstLogin:savedUser.firstLogin,
+            subscriptionId:savedUser.subscriptionId,
+            imageUrl: savedUser.image,
+          }
+        };
+        return res.status(201).json({ message: "User created", token: access_token, isExist:false,result:result });
+      }
     } catch (error) {
       console.log('Error', error);
       return res.status(500).send({ message: 'Error', error: error.message });

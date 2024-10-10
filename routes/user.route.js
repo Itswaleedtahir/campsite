@@ -10,6 +10,7 @@ router.get(`/get-user`, userController.getAllUsers);
 router.put(`/update-user`, userController.updateUser);
 router.post(`/login`, userController.loginUser);
 router.post(`/googleVerify`, userController.googleVerify);
+router.post(`/appleLogin`, userController.appleLogin);
 router.post(`/referralCheck`,authPolicy ,userController.referralCheck);
 router.post(`/forgot-password`, userController.forgotPassword);
 router.post(`/reset-password`, userController.resetPassword);

@@ -77,6 +77,10 @@ var user = new Schema({
         type: String,
         required: false
     }, 
+    "appleId":{
+        type:String,
+        required:false
+    },
     "level": {
         type: String,
         default: 'G1' // Default to the lowest level
