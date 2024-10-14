@@ -9,5 +9,6 @@ router.post(`/admin-verify`, adminController.adminVerify);
 router.post(`/admin-passwordReset`, adminController.resetPassword);
 router.get(`/admin-getAdmins`, adminController.getAdmins);
 router.delete(`/admin-delete/:id`,authPolicy,adminController.deleteAdmin);
+router.put(`/update-admin/:adminId`,adminController.updateAdmin);
 
 module.exports = router;

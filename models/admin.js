@@ -27,10 +27,6 @@ var admin = new Schema({
     "otp": {
         type: String
     },
-    "isVerified": {
-        type: Boolean,
-        default: false
-    },
     "resetToken": {
         type: String
     },

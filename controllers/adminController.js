@@ -253,6 +253,35 @@ let methods = {
             message: 'Internal Server Error'
         });
     }
+    },
+    updateAdmin: async(req,res)=>{
+      const { adminId } = req.params;
+      const { firstname, lastname, profilepic } = req.body;
+  
+      try {
+          const admin = await Admin.findById(adminId);
+          if (!admin) {
+              return res.status(404).send('Admin not found');
+          }
+  
+          // Update fields
+          if (firstname) admin.firstname = firstname;
+          if (lastname) admin.lastname = lastname;
+          if (profilepic) admin.profilepic = profilepic;
+  
+          await admin.save(); // Save the updated document
+  
+        return  res.send({
+              message: 'Admin updated successfully',
+              data: admin
+          });
+      } catch (error) {
+        console.log("error",error)
+         return res.status(500).send({
+              message: 'Error updating admin',
+              error: error.message
+          });
+      }
     }
 
 }
