@@ -6,6 +6,43 @@ const Amenity = require("../models/amenity")
 const SpecialFeature = require("../models/specialFeatures")
 const utils = require("../utils/index")
 
+// Helper function to calculate the distance between two points using the Haversine formula
+const haversineDistance = (lat1, lon1, lat2, lon2) => {
+    const toRad = (value) => (value * Math.PI) / 180;
+  
+    const R = 6371; // Radius of the Earth in km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
+
+// Helper function to break down a string into individual words
+const breakdownString = (str) => {
+    return str.split(/\s+/).filter(Boolean); // Split the string by spaces and remove empty strings
+  };
+
+// Helper function to check which words matched in specific fields
+const checkMatches = (document, words) => {
+    const matchedWords = [];
+    words.forEach(word => {
+      if (
+        new RegExp(word, 'i').test(document.name) ||
+        new RegExp(word, 'i').test(document.about) ||
+        new RegExp(word, 'i').test(document.phoneNo) ||
+        new RegExp(word, 'i').test(document.email) ||
+        new RegExp(word, 'i').test(document.website) ||
+        document.rulesAndRegulations.some(rule => new RegExp(word, 'i').test(rule))
+      ) {
+        matchedWords.push(word);
+      }
+    });
+    return matchedWords;
+  };
+
 let methods = {
     fileUploadS3: async (req, res, next) => {
         try {
@@ -82,9 +119,7 @@ let methods = {
                 message: "Internal Server Error"
             });
         }
-    }
-    ,
-    
+    },
     createCampsite: async (req, res) => {
         try {
 
@@ -432,6 +467,102 @@ let methods = {
         } catch (error) {
             res.status(500).send({ message: 'Error fetching data', error: error });
         }
+    },
+    getNearByCamsites: async(req,res)=>{
+        try {
+            const { latitude, longitude } = req.body;
+        
+            if (!latitude || !longitude) {
+              return res.status(400).json({ error: 'Latitude and longitude are required' });
+            }
+        
+            // Fetch all campsites
+            const campsites = await Campsites.find({});
+        
+            // Filter campsites within 5 km radius
+            const nearbyCampsites = campsites.filter(campsite => {
+              const campsiteLat = campsite.location.latitude;
+              const campsiteLon = campsite.location.longitude;
+              
+              if (!campsiteLat || !campsiteLon) return false;
+        
+              const distance = haversineDistance(latitude, longitude, campsiteLat, campsiteLon);
+              return distance <= 5; // Only include campsites within 5 km radius
+            });
+        
+           return res.json(nearbyCampsites);
+          } catch (error) {
+            console.log("error",error)
+           return res.status(500).json({ error: 'Server error' });
+          }
+    },
+    getRecommendCampsites:async(req,res)=>{
+        try {
+            const { string1, string2, campingLocationType } = req.body;
+        
+            if (!string1 || !string2 || !campingLocationType) {
+              return res.status(400).json({ error: 'Both strings and campingLocationType are required' });
+            }
+        
+            // Breakdown the strings into individual words
+            const wordsFromString1 = breakdownString(string1);
+            const wordsFromString2 = breakdownString(string2);
+        
+            // Construct the query to search for any of the words in the document fields
+            const campsites = await Campsites.find({
+              campingLocationType, // Match the campingLocationType exactly
+              $and: [ // Both string1 and string2 word matches must be present
+                {
+                  $or: wordsFromString1.map(word => ({
+                    $or: [
+                      { name: { $regex: word, $options: 'i' } },
+                      { about: { $regex: word, $options: 'i' } },
+                      { phoneNo: { $regex: word, $options: 'i' } },
+                      { email: { $regex: word, $options: 'i' } },
+                      { website: { $regex: word, $options: 'i' } },
+                      { rulesAndRegulations: { $regex: word, $options: 'i' } }
+                    ]
+                  }))
+                },
+                {
+                  $or: wordsFromString2.map(word => ({
+                    $or: [
+                      { name: { $regex: word, $options: 'i' } },
+                      { about: { $regex: word, $options: 'i' } },
+                      { phoneNo: { $regex: word, $options: 'i' } },
+                      { email: { $regex: word, $options: 'i' } },
+                      { website: { $regex: word, $options: 'i' } },
+                      { rulesAndRegulations: { $regex: word, $options: 'i' } }
+                    ]
+                  }))
+                }
+              ]
+            });
+        
+            // If no matching campsites found, return a relevant message
+            if (!campsites.length) {
+              return res.status(404).json({ message: 'No campsites found matching the criteria.' });
+            }
+        
+            // Check and add matched words to the response
+            const result = campsites.map(campsite => {
+              const matchedWordsString1 = checkMatches(campsite, wordsFromString1);
+              const matchedWordsString2 = checkMatches(campsite, wordsFromString2);
+        
+              return {
+                campsite,
+                matchedWords: {
+                  string1: matchedWordsString1,
+                  string2: matchedWordsString2
+                }
+              };
+            });
+        
+            // Return the campsites and the matched words
+            res.json(result);
+          } catch (error) {
+            res.status(500).json({ error: 'Server error' });
+          }
     }
 }
 
