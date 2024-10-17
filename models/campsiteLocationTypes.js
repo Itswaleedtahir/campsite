@@ -7,6 +7,9 @@ const campingLocationTypeSchema = new Schema({
     type: String,
     required: true,
     unique: true // Ensure no duplicate location types
+  },
+  image:{
+    type:String
   }
 });
 

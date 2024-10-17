@@ -21,6 +21,7 @@ router.post('/getRecommendCampsites',authPolicy ,camsitesController.getRecommend
 router.put('/campsites/:id', camsitesController.updateCampsite);
 router.get('/getSingleCampsite/:id', camsitesController.getSingleCampSite);
 router.post('/updateAmenity/:id', camsitesController.updateAmenity);
+router.post('/updateCampsiteLocationType/:id', camsitesController.updateCampsiteLocationType);
 router.delete('/deleteAmenity/:id', camsitesController.deleteAmenity);
 router.post('/updateSpecialFeature/:id', camsitesController.updateSpecialFeature);
 router.delete('/deleteSpecialFeature/:id', camsitesController.deleteSpecialFeature);

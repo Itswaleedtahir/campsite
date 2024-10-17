@@ -276,18 +276,15 @@ let methods = {
     },
     addCampsiteLocationTypes: async (req, res) => {
         try {
-            const types = req.body.names; // Expect an array of types
-            if (!types || !Array.isArray(types)) {
-                return res.status(400).json({ message: "Invalid input. Please provide an array of camping location types." });
+            const name = req.body.name; // Expect a single name string
+            const image = req.body.image
+
+            if (!name) {
+                return res.status(400).json({ message: "Invalid input. Please provide an amenity name." });
             }
 
-            const insertPromises = types.map(name => {
-                const newType = new CampingLocationType({ name });
-                return newType.save().catch(err => err.message); // Handle individual save errors
-            });
-
-            const results = await Promise.all(insertPromises);
-            const errors = results.filter(result => typeof result === 'string');
+            const CampingLocation = new CampingLocationType({ name, image });
+            await CampingLocation.save();
 
             if (errors.length > 0) {
                 return res.status(400).json({ message: "Some entries were not added due to errors.", errors });
@@ -308,6 +305,35 @@ let methods = {
             return res.status(500).json({ message: error.message });
         }
     },
+    updateCampsiteLocationType: async (req, res) => {
+        try {
+            const { id } = req.params; // Get amenity ID from the URL parameters
+            const { name, image } = req.body; // Get updated name and image from the request body
+    
+    
+            if (!name && !image) {
+                return res.status(400).json({ message: "Invalid input. Please provide either a new name or image." });
+            }
+    
+            // Create an update object dynamically based on what fields are provided
+            const updateData = {};
+            if (name) updateData.name = name;
+            if (image) updateData.image = image;
+    
+            // Find the Camping Location Type by ID and update it
+            const updatedLocationType = await CampingLocationType.findByIdAndUpdate(id, updateData, { new: true });
+    
+            if (!updatedLocationType) {
+                return res.status(404).json({ message: "Camping location type not found." });
+            }
+    
+            return res.status(200).json({ message: "Camping location type updated successfully.", updatedLocationType });
+        } catch (error) {
+            console.log("Error updating camping location type:", error);
+            return res.status(500).json({ message: error.message });
+        }
+    },
+    
     addAmenity: async (req, res) => {
         try {
             const name = req.body.name; // Expect a single name string
