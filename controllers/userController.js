@@ -1,4 +1,4 @@
-let User = require("../models/userModel");
+const User = require("../models/userModel");
 let bcrypt = require("bcrypt");
 const Campsites = require("../models/campsites")
 const crypto = require('crypto');
@@ -189,7 +189,7 @@ let methods = {
           success: false,
         });
       }
-  
+      console.log("user",user)
       // Check if the user is verified
       if (!user.isVerified) {
         return res.status(403).json({
@@ -221,6 +221,7 @@ let methods = {
           firstLogin:user.firstLogin,
           subscriptionId:user.subscriptionId,
           imageUrl: user.imageUrl || "",
+          recommendationData:user.recommendationData
         },
         access_token,
       };

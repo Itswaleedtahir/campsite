@@ -1,4 +1,5 @@
 const Campsites = require("../models/campsites")
+const User = require("../models/userModel");
 const services = require("../helpers/services")
 const CampsiteType = require('../models/campsiteTypes');
 const CampingLocationType = require("../models/campsiteLocationTypes")
@@ -498,46 +499,62 @@ let methods = {
     },
     getRecommendCampsites:async(req,res)=>{
         try {
-            const { string1, string2, campingLocationType } = req.body;
-        
-            if (!string1 || !string2 || !campingLocationType) {
-              return res.status(400).json({ error: 'Both strings and campingLocationType are required' });
+            let userId = req.token._id
+            console.log("oid",userId)
+            const user = await User.findById(userId);
+            if (!user) {
+              return res.status(404).json({ error: 'User not found' });
             }
-        
+
+          // Check if the recommendation data exists for the user
+    let recommendation = null;
+    if (user.recommendationData && user.recommendationData.length > 0) {
+      // Here, we'll take the latest recommendation or find a specific one (depending on your logic)
+      recommendation = user.recommendationData[user.recommendationData.length - 1]; // Using the latest one
+    }
+
+    // If no recommendation is found, use the values from the body
+    const { string1, string2, campingLocationType } = recommendation
+      ? { string1: recommendation.string1, string2: recommendation.string2, campingLocationType: recommendation.campingLocationType }
+      : req.body;
             // Breakdown the strings into individual words
             const wordsFromString1 = breakdownString(string1);
             const wordsFromString2 = breakdownString(string2);
-        
+        console.log("word1",wordsFromString1)
+        console.log("word2",wordsFromString2)
             // Construct the query to search for any of the words in the document fields
             const campsites = await Campsites.find({
-              campingLocationType, // Match the campingLocationType exactly
-              $and: [ // Both string1 and string2 word matches must be present
-                {
-                  $or: wordsFromString1.map(word => ({
-                    $or: [
-                      { name: { $regex: word, $options: 'i' } },
-                      { about: { $regex: word, $options: 'i' } },
-                      { phoneNo: { $regex: word, $options: 'i' } },
-                      { email: { $regex: word, $options: 'i' } },
-                      { website: { $regex: word, $options: 'i' } },
-                      { rulesAndRegulations: { $regex: word, $options: 'i' } }
-                    ]
-                  }))
-                },
-                {
-                  $or: wordsFromString2.map(word => ({
-                    $or: [
-                      { name: { $regex: word, $options: 'i' } },
-                      { about: { $regex: word, $options: 'i' } },
-                      { phoneNo: { $regex: word, $options: 'i' } },
-                      { email: { $regex: word, $options: 'i' } },
-                      { website: { $regex: word, $options: 'i' } },
-                      { rulesAndRegulations: { $regex: word, $options: 'i' } }
-                    ]
-                  }))
-                }
-              ]
-            });
+                campingLocationType, // Match the campingLocationType exactly
+                $and: [ // Both string1 and string2 word matches must be present
+                  {
+                    $or: wordsFromString1.map(word => ({
+                      $or: [
+                        { name: { $regex: word, $options: 'i' } },
+                        { about: { $regex: word, $options: 'i' } },
+                        { phoneNo: { $regex: word, $options: 'i' } },
+                        { email: { $regex: word, $options: 'i' } },
+                        { website: { $regex: word, $options: 'i' } },
+                        { rulesAndRegulations: { $regex: word, $options: 'i' } },
+                        { campsiteType: { $regex: word, $options: 'i' } } // Added campsiteType to the search
+                      ]
+                    }))
+                  },
+                  {
+                    $or: wordsFromString2.map(word => ({
+                      $or: [
+                        { name: { $regex: word, $options: 'i' } },
+                        { about: { $regex: word, $options: 'i' } },
+                        { phoneNo: { $regex: word, $options: 'i' } },
+                        { email: { $regex: word, $options: 'i' } },
+                        { website: { $regex: word, $options: 'i' } },
+                        { rulesAndRegulations: { $regex: word, $options: 'i' } },
+                        { campsiteType: { $regex: word, $options: 'i' } } // Added campsiteType to the search
+                      ]
+                    }))
+                  }
+                ]
+              });
+          
         
             // If no matching campsites found, return a relevant message
             if (!campsites.length) {
@@ -557,6 +574,29 @@ let methods = {
                 }
               };
             });
+
+      // Check if the search already exists in the user's recommendationData
+      const existingRecommendation = user.recommendationData.find(recommendation =>
+        recommendation.string1 === string1 &&
+        recommendation.string2 === string2 &&
+        recommendation.campingLocationType === campingLocationType
+      );
+  
+      // If no existing recommendation, add a new one
+      if (!existingRecommendation) {
+        user.recommendationData.push({
+          string1,
+          string2,
+          campingLocationType,
+          searchedAt: new Date() // Optional: To track when the search was performed
+        });
+  
+        // Save the user with updated recommendationData
+        await user.save();
+      }
+
+    // Save the user with updated recommendationData
+    await user.save();
         
             // Return the campsites and the matched words
             res.json(result);

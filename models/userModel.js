@@ -93,6 +93,12 @@ var user = new Schema({
         type:Boolean,
         default:true
     },
+    "recommendationData": [{
+        string1: { type: String },
+        string2: { type: String },
+        campingLocationType: { type: String },
+        searchedAt: { type: Date, default: Date.now } // Optional: to track when the search was made
+    }],
     "emergencyContacts": [{
         name: {
             type: String,

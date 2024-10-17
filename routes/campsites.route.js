@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const camsitesController = require("../controllers/campsites");
+const authPolicy = require("../utils/auth.policy");
 
 router.post('/fileupload/s3', camsitesController.fileUploadS3);
 router.post('/createCampsite', camsitesController.createCampsite);
@@ -16,7 +17,7 @@ router.post('/specialFeatures', camsitesController.addSpecialFeature);
 router.get('/specialFeatures', camsitesController.getSpecialFeatures);
 router.get('/getAllDataForFilters', camsitesController.getAllDataForFilters);
 router.post('/getNearByCamsites', camsitesController.getNearByCamsites);
-router.post('/getRecommendCampsites', camsitesController.getRecommendCampsites);
+router.post('/getRecommendCampsites',authPolicy ,camsitesController.getRecommendCampsites);
 router.put('/campsites/:id', camsitesController.updateCampsite);
 router.get('/getSingleCampsite/:id', camsitesController.getSingleCampSite);
 router.post('/updateAmenity/:id', camsitesController.updateAmenity);
