@@ -629,6 +629,25 @@ let methods = {
           } catch (error) {
             res.status(500).json({ error: 'Server error' });
           }
+    },
+    getTopRatedCampsites: async (req, res) => {
+        try {
+            // Find and sort by averageRating in descending order, and limit to 3 results
+            const topRatedCampsites = await Campsites.find()
+                .sort({ "reviewStats.averageRating": -1 }) // Sort by averageRating in descending order
+                .limit(3); // Limit to top 3 campsites
+    
+            // If no campsites found, return a relevant message
+            if (!topRatedCampsites.length) {
+                return res.status(404).json({ message: 'No campsites found.' });
+            }
+    
+            // Return the top 3 rated campsites
+            return res.status(200).json({ message: "Top 3 most rated campsites", campsites: topRatedCampsites });
+        } catch (error) {
+            console.log("Error fetching top rated campsites:", error);
+            return res.status(500).json({ message: error.message });
+        }
     }
 }
 

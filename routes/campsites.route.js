@@ -6,6 +6,7 @@ const authPolicy = require("../utils/auth.policy");
 router.post('/fileupload/s3', camsitesController.fileUploadS3);
 router.post('/createCampsite', camsitesController.createCampsite);
 router.get('/getAllCampsite', camsitesController.getAllCampSites);
+router.get('/getTopRatedCampsites', camsitesController.getTopRatedCampsites);
 router.post('/searchCampsite', camsitesController.searchCampsite);
 router.post('/campsiteTypes', camsitesController.addCampsiteTypes);
 router.get('/campsiteTypes', camsitesController.getCampsiteTypes);
