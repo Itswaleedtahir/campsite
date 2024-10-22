@@ -213,7 +213,7 @@ let methods = {
         console.log("oid",adminId)
         const superAdminCheck = await Admin.findOne({_id:adminId})
         console.log("admin",superAdminCheck)
-        if(superAdminCheck != "super_admin"){
+        if(superAdminCheck.role != "super_admin"){
           return res.status(401).json({
             message:"You cannot perform this operation"
           })
