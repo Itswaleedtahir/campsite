@@ -1,5 +1,6 @@
 const plan = require('../models/Plans');
 const Campsite = require('../models/campsites')
+const Booking = require('../models/booking')
 const Affiliate = require("../models/Affiliate")
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/userModel");
@@ -353,91 +354,142 @@ getPlan: async(req,res)=>{
     }
 },
 
- securePayment2 : async (req, res) => {
+securePayment2: async (req, res) => {
     try {
-        let {_id,email} = req.token;
-      console.log("data",_id,email);
-      const{campsiteId} = req.params
-        let { currency, amount } = req.body;
-      if (!currency) {
-        currency = 'USD'
-      }
-      let existingCustomers = await stripe.customers.list({ email: email });
-      console.log("existingCustomers", existingCustomers)
-      if (existingCustomers.data.length) {
-        // don't create customer if already exists
-        console.log("Dont create", existingCustomers.data[0].id)
-        // create intent
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: Math.round(amount * 100),
-          currency: currency,
-          customer: existingCustomers.data[0].id,
-          description: "Customer Payment",
-          metadata: {
-            userId: _id,
-            campsiteId: campsiteId
-          },
-        });
-        res.status(200).send({
-          success: true,
-          message: "Payment has been made",
-          paymentIntent: paymentIntent
-        })
-      } else {
-        console.log("create customer");
-        //create customer first against email
-        const customer = await stripe.customers
-          .create({
-            email:email,
-          })
-        console.log(customer)
-        if (customer) {
-          //charge customer after creating customer
-          const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount * 100),
-            currency: 'USD',
-            customer: customer.id,
-            description: "Customer Payment"
-          });
-          console.log(paymentIntent)
-          if (paymentIntent) {
-            res.status(200).send({
-              success: true,
-              message: "Payment has been made",
-              paymentIntent: paymentIntent
-            })
-          }
-        } else {
-          res.status(422).send({
-            success: false,
-            message: "Error Creating New Customer"
-          })
+        let { _id, email } = req.token;
+        console.log("data", _id, email);
+
+        const { campsiteId } = req.params;
+        let { currency, noOfDays, noOfPersons, pricePerDay, startDate, endDate } = req.body;
+
+        // Set default currency if not provided
+        if (!currency) {
+            currency = 'USD';
         }
-      }
+
+        // Calculate the total amount
+        let totalAmount = noOfDays * noOfPersons * pricePerDay;
+        console.log("Total Amount: ", totalAmount);
+
+        // Check if customer already exists in Stripe
+        let existingCustomers = await stripe.customers.list({ email: email });
+        console.log("existingCustomers", existingCustomers);
+
+        // If customer exists, create payment intent
+        if (existingCustomers.data.length) {
+            console.log("Dont create customer", existingCustomers.data[0].id);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: Math.round(totalAmount * 100), // amount is in cents
+                currency: currency,
+                customer: existingCustomers.data[0].id,
+                description: "Customer Payment",
+                metadata: {
+                    userId: _id,
+                    campsiteId: campsiteId,
+                    noOfDays: noOfDays,
+                    noOfPersons: noOfPersons,
+                    pricePerDay: pricePerDay
+                }
+            });
+
+            // Store payment details in the database
+            const paymentRecord = new Booking({
+                userId: _id,
+                campsiteId: campsiteId,
+                currency: currency,
+                totalAmount: totalAmount,
+                noOfDays: noOfDays,
+                noOfPersons: noOfPersons,
+                pricePerDay: pricePerDay,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                paymentIntentId: paymentIntent.id,
+                status: 'pending' 
+            });
+            await paymentRecord.save();
+
+           return res.status(200).send({
+                success: true,
+                message: "Payment has been made",
+                paymentIntent: paymentIntent
+            });
+
+        } else {
+            console.log("Create customer");
+            // Create new customer in Stripe
+            const customer = await stripe.customers.create({
+                email: email
+            });
+
+            if (customer) {
+                // Create payment intent for the new customer
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: Math.round(totalAmount * 100),
+                    currency: currency,
+                    customer: customer.id,
+                    description: "Customer Payment",
+                    metadata: {
+                        userId: _id,
+                        campsiteId: campsiteId,
+                        noOfDays: noOfDays,
+                        noOfPersons: noOfPersons,
+                        pricePerDay: pricePerDay
+                    }
+                });
+
+                // Store payment details in the database
+            const paymentRecord = new Booking({
+                userId: _id,
+                campsiteId: campsiteId,
+                currency: currency,
+                totalAmount: totalAmount,
+                noOfDays: noOfDays,
+                noOfPersons: noOfPersons,
+                pricePerDay: pricePerDay,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                paymentIntentId: paymentIntent.id,
+                status: 'pending' 
+            });
+            await paymentRecord.save();
+
+          return  res.status(200).send({
+                success: true,
+                message: "Payment has been made",
+                paymentIntent: paymentIntent
+            });
+
+            } else {
+                res.status(422).send({
+                    success: false,
+                    message: "Error Creating New Customer"
+                });
+            }
+        }
+    } catch (err) {
+        console.log("Error: ", err);
+
+        if (err.isJoi) {
+            res.status(422).json({
+                success: false,
+                message: err.details[0].message
+            });
+        } else if (err.type == "StripeInvalidRequestError") {
+            console.log("Stripe error");
+            res.status(400).json({
+                success: false,
+                message: err.raw.message
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
     }
-    catch (err) {
-      console.log("err.isJoi: ", err)
-      console.log(err.type)
-      if (err.isJoi) {
-        res.status(422).json({
-          success: false,
-          message: err.details[0].message
-        })
-      } else if (err.type == "StripeInvalidRequestError") {
-        console.log("stripe error")
-        console.log('err.raw ', err.raw.message)
-        res.status(400).json({
-          success: false,
-          message: err.raw.message
-        })
-      } else {
-        res.status(500).json({
-          success: false,
-          message: "Internal Server Error"
-        })
-      }
-    }
-  },
+},
+
   stripetesting : async (req, res, ) => {
 
     try {
