@@ -4,12 +4,12 @@ const Schema = mongoose.Schema;
 // Define the Payment schema
 const PaymentSchema = new Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId, 
+        type: Schema.Types.ObjectId,
         ref: 'User',  // Assuming you have a User model to reference
         required: true
     },
     campsiteId: {
-        type: mongoose.Schema.Types.ObjectId, 
+        type: Schema.Types.ObjectId,
         ref: 'Campsite',  // Assuming you have a Campsite model to reference
         required: true
     },

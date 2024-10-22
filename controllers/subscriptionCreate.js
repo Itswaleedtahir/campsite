@@ -489,7 +489,77 @@ securePayment2: async (req, res) => {
         }
     }
 },
+updateBookingStatus: async(req,res)=>{
+    try {
+        const { status ,paymentIntentId} = req.body; // Status can be 'completed' or 'failed'
+        console.log("id",paymentIntentId)
+        // Validate status input
+        if (!['completed', 'failed'].includes(status)) {
+            return res.status(400).send({
+                success: false,
+                message: "Invalid status. It must be either 'completed' or 'failed'."
+            });
+        }
 
+        // Check if the paymentIntent exists in the DB
+        let paymentRecord = await Booking.findOne({ paymentIntentId:paymentIntentId });
+
+        if (!paymentRecord) {
+            return res.status(404).send({
+                success: false,
+                message: "Payment record not found."
+            });
+        }
+
+        // Update the payment status in the database
+        paymentRecord.status = status;
+        await paymentRecord.save();
+
+        res.status(200).send({
+            success: true,
+            message: `Payment status updated to ${status}`,
+            paymentRecord
+        });
+    } catch (err) {
+        console.log("Error: ", err);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+},
+getCompletedBookingsForUser: async (req, res) => {
+    try {
+        let { _id, email } = req.token;
+        console.log("data", _id, email);
+
+        // Find all completed bookings for the user
+        const completedBookings = await Booking.find({
+            userId: _id,
+            status: 'completed'
+        }).populate("userId") // Populate user details (e.g., name, email)
+        .populate("campsiteId");
+
+        if (!completedBookings.length) {
+            return res.status(404).send({
+                success: false,
+                message: "No completed bookings found for this user."
+            });
+        }
+
+       return res.status(200).send({
+            success: true,
+            message: "Completed bookings retrieved successfully.",
+            bookings: completedBookings
+        });
+    } catch (err) {
+        console.log("Error: ", err);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+},
   stripetesting : async (req, res, ) => {
 
     try {
