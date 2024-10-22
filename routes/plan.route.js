@@ -9,6 +9,8 @@ router.get('/getPlan',planController.getPlan)
 router.post('/campsiteBooking',authPolicy,planController.securePayment2)
 router.post('/updateBookingStatus',authPolicy,planController.updateBookingStatus)
 router.get('/getCompletedBookingsForUser',authPolicy,planController.getCompletedBookingsForUser)
+router.post('/refundCampsiteBooking',authPolicy,planController.refundCampsiteBooking)
+router.post('/getRefundStatus',authPolicy,planController.getRefundStatus)
 router.post("/webhookforBooking",planController.stripetesting)
 router.post('/bookCampsite/:campsiteId',authPolicy,planController.securePayment2)
 module.exports = router;

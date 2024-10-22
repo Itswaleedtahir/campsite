@@ -48,8 +48,11 @@ const PaymentSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
+        enum: ['pending', 'completed', 'canceled'],
         default: 'pending'
+    },
+    refundId: {
+        type: String,  // Store the refundId for reference
     },
     createdAt: {
         type: Date,
