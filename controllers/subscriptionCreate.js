@@ -565,23 +565,39 @@ let methods = {
         try {
             let { _id, email } = req.token;
             console.log("data", _id, email);
-            const {paymentIntentId}=req.body
-
-              // Check if the paymentIntent exists in the DB
-              let paymentRecord = await Booking.findOne({ paymentIntentId: paymentIntentId });
-              if(!paymentRecord){
+            const { paymentIntentId } = req.body;
+    
+            // Check if the paymentIntent exists in the DB
+            let paymentRecord = await Booking.findOne({ paymentIntentId: paymentIntentId });
+            if (!paymentRecord) {
                 return res.status(404).send({
                     success: false,
                     message: "Payment record not found."
                 });
-              }
-
+            }
+    
+            // Check if the booking was made within the last 10 days
+            const bookingTime = new Date(paymentRecord.createdAt);
+            const currentTime = new Date();
+            const timeDifference = currentTime - bookingTime;
+    
+            const tenDaysInMilliseconds = 10 * 24 * 60 * 60 * 1000;
+    
+            if (timeDifference > tenDaysInMilliseconds) {
+                return res.status(400).send({
+                    success: false,
+                    message: "Refund not possible as more than 10 days have passed since the booking."
+                });
+            }
+    
+            // Proceed with refund if within 10 days
             const refund = await stripe.refunds.create({
                 payment_intent: paymentIntentId,
-              });
-              console.log("refund",refund)
-              // Store payment details in the database
-              const refundData = new Refund({
+            });
+            console.log("refund", refund);
+    
+            // Store refund details in the database
+            const refundData = new Refund({
                 userId: _id,
                 amount: refund.amount,
                 refundId: refund.id,
@@ -589,30 +605,41 @@ let methods = {
                 chargeId: refund.charge,
                 destinationDetails: refund.destination_details,
                 paymentIntendId: refund.payment_intent,
-                status:refund.status
+                status: refund.status
             });
             await refundData.save();
+    
             // Update the booking record with refundId and status 'canceled'
-        paymentRecord.status = 'canceled';
-        paymentRecord.refundId = refund.id; // Save refundId to the booking
-        await paymentRecord.save(); // Save the updated booking record
-              console.log("reund",refund)
-              
-              return res.status(200).send({
+            paymentRecord.status = 'canceled';
+            paymentRecord.refundId = refund.id;
+            await paymentRecord.save();
+    
+            return res.status(200).send({
                 success: true,
-                message: "Refund Successfull successfully.",
+                message: "Refund processed successfully.",
                 Refund: refundData
             });
-
+    
         } catch (error) {
-            console.log("error",error)
+            console.log("error", error);
+    
+            // Check if the error is due to the PaymentIntent not having a successful charge
+            if (error.type === 'StripeInvalidRequestError' && error.raw && error.raw.message.includes('does not have a successful charge to refund')) {
+                return res.status(400).send({
+                    success: false,
+                    message: "Refund not possible as the payment is still pending or incomplete.",
+                    error: error.raw.message
+                });
+            }
+    
             return res.status(500).json({
                 success: false,
                 message: "Internal Server Error",
-                error:error
+                error: error
             });
         }
     },
+    
     getRefundStatus:async(req,res)=>{
         try {
             const {_id}=req.body
