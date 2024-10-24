@@ -579,7 +579,10 @@ let methods = {
                     }))
                   }
                 ]
-              });
+              }).populate('amenities')
+              .populate('specialFeatures')
+              .populate('peopleJoined') // You can specify fields you want to include
+              .populate('wishlistUsers');
           
         
             // If no matching campsites found, return a relevant message

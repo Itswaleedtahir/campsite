@@ -39,12 +39,14 @@ let methods = {
         let { email } = req.token;
         try {
             let { priceId, paymentMethodId, freeTrailDays } = req.body
+            console.log("payif",priceId)
             email = email.toLowerCase();
             const customers = await stripe.customers.list({ email });
             console.log("customerlist", customers)
             const ifUser = await User.findOne({ email: email })
             console.log("user", ifUser)
-
+           const ifPlan = await plan.findOne({ priceId: priceId });
+           console.log("pay",ifPlan)
             if (ifUser?.subscriptionStatus == 'active') {
                 return res.status(400).send({
                     success: true,
@@ -95,7 +97,7 @@ let methods = {
                             subscriptionId: subscription.id,
                             subscriptionStatus: subscription.status,
                             planId: ifPlan?._id,
-                            isPaid: true
+                            isPaid: true,
                         }
                     },
                     { new: true }
@@ -483,7 +485,7 @@ let methods = {
                     });
 
                 } else {
-                    res.status(422).send({
+                   return res.status(422).send({
                         success: false,
                         message: "Error Creating New Customer"
                     });
@@ -493,18 +495,18 @@ let methods = {
             console.log("Error: ", err);
 
             if (err.isJoi) {
-                res.status(422).json({
+               return res.status(422).json({
                     success: false,
                     message: err.details[0].message
                 });
             } else if (err.type == "StripeInvalidRequestError") {
                 console.log("Stripe error");
-                res.status(400).json({
+              return  res.status(400).json({
                     success: false,
                     message: err.raw.message
                 });
             } else {
-                res.status(500).json({
+             return   res.status(500).json({
                     success: false,
                     message: "Internal Server Error"
                 });
@@ -699,6 +701,9 @@ let methods = {
             res.sendStatus(400);
         }
     },
+    cancelSubscription:async(req,res)=>{
+
+    }
 
 }
 
