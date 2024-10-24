@@ -36,8 +36,9 @@ let methods = {
         }
     },
     getSubscriptionForUserFunction: async (req, res) => {
+        let { email } = req.token;
         try {
-            let { priceId, email, paymentMethodId, freeTrailDays } = req.body
+            let { priceId, paymentMethodId, freeTrailDays } = req.body
             email = email.toLowerCase();
             const customers = await stripe.customers.list({ email });
             console.log("customerlist", customers)

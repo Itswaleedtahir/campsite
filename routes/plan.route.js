@@ -4,7 +4,7 @@ const planController = require("../controllers/subscriptionCreate");
 const authPolicy = require("../utils/auth.policy");
 
 router.post('/createPlan',planController.createModel)
-router.post('/createSubscription',planController.getSubscriptionForUserFunction)
+router.post('/createSubscription',authPolicy,planController.getSubscriptionForUserFunction)
 router.get('/getPlan',planController.getPlan)
 router.post('/campsiteBooking',authPolicy,planController.securePayment2)
 router.post('/updateBookingStatus',authPolicy,planController.updateBookingStatus)
