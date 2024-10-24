@@ -707,6 +707,8 @@ let methods = {
             const userId = _id
             console.log("id",_id)
             const userInfo = await User.findOne({_id });
+            console.log("user",userInfo)
+            if(userInfo.subscriptionStatus === "active"){
             const subscription = await stripe.subscriptions.cancel(userInfo.subscriptionId);
             console.log("sub",subscription)
             return res.status(201).send({
@@ -714,7 +716,13 @@ let methods = {
                 message: 'Subscription canceled',
                 email: email,
             });
-            
+        }else{
+            return res.status(201).send({
+                success: true,
+                message: 'Subscription is already canceled',
+                email: email,
+            });
+        }
           } catch (err) {
             if (err.type && err.type.startsWith('Stripe')) {
               // handle Stripe error here
