@@ -10,7 +10,7 @@ const User = require("../models/userModel");
 let methods = {
 
     createModel: async (req, res) => {
-        const newPlan = new plan({ priceId: "price_1PaGrbRwImzljb97fhOByaCA", planName: "Campsite monthly subscription" });
+        const newPlan = new plan(req.body);
         await newPlan.save();
         res.status(201).send(newPlan);
     },
