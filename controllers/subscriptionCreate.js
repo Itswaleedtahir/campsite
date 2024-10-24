@@ -61,14 +61,14 @@ let methods = {
             }
             console.log("affiliate", affiliatedUser)
 
-            const paymentMethod = await stripe.paymentMethods.create({
-                type: 'card',
-                card: {
-                    token: 'tok_visa'  // Using a test token instead of raw card details
-                }
-            });
-            console.log("method", paymentMethod);
-            paymentMethodId = paymentMethod.id
+            // const paymentMethod = await stripe.paymentMethods.create({
+            //     type: 'card',
+            //     card: {
+            //         token: 'tok_visa'  // Using a test token instead of raw card details
+            //     }
+            // });
+            // console.log("method", paymentMethod);
+            // paymentMethodId = paymentMethod.id
             const customer = customers.data.length ? customers.data[0] : null;
             // let freeTrailDays;
             if (freeTrailDays) {
