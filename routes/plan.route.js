@@ -5,6 +5,7 @@ const authPolicy = require("../utils/auth.policy");
 
 router.post('/createPlan',planController.createModel)
 router.post('/createSubscription',authPolicy,planController.getSubscriptionForUserFunction)
+router.post('/cancelSubscription',authPolicy,planController.cancelSubscription)
 router.get('/getPlan',planController.getPlan)
 router.post('/campsiteBooking',authPolicy,planController.securePayment2)
 router.post('/updateBookingStatus',authPolicy,planController.updateBookingStatus)

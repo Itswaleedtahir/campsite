@@ -312,8 +312,8 @@ let methods = {
                                 isPaid: false,
                                 subscriptionId: "",
                                 // shouldLoginAfter: dateAndTimeAfter48Hours, // Assuming this property is commented out intentionally
-                                subscriptionStatus: "canceled"
-                            },
+                                subscriptionStatus: "canceled",
+                                planId:""                            },
                             {
                                 new: true // This will return the updated document
                             }
@@ -702,7 +702,35 @@ let methods = {
         }
     },
     cancelSubscription:async(req,res)=>{
-
+        try {
+            let { _id, email } = req.token;
+            const userId = _id
+            console.log("id",_id)
+            const userInfo = await User.findOne({_id });
+            const subscription = await stripe.subscriptions.cancel(userInfo.subscriptionId);
+            console.log("sub",subscription)
+            return res.status(201).send({
+                success: true,
+                message: 'Subscription canceled',
+                email: email,
+            });
+            
+          } catch (err) {
+            if (err.type && err.type.startsWith('Stripe')) {
+              // handle Stripe error here
+              return {
+                success: false,
+                message: "Stripe error: " + err.message
+              };
+            } else {
+              console.log("err", err)
+              // handle other errors here
+              return {
+                success: false,
+                message: "Internal Server Error"
+              };
+            }
+          }
     }
 
 }
