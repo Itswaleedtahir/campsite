@@ -495,116 +495,115 @@ let methods = {
             res.status(500).send({ message: 'Error fetching data', error: error });
         }
     },
-    getNearByCamsites: async(req,res)=>{
-        try {
-            const { latitude, longitude } = req.body;
-        
-            if (!latitude || !longitude) {
-              return res.status(400).json({ error: 'Latitude and longitude are required' });
-            }
-        
-            // Fetch all campsites
-            const campsites = await Campsites.find({});
-        
-            // Filter campsites within 5 km radius
-            const nearbyCampsites = campsites.filter(campsite => {
-              const campsiteLat = campsite.location.latitude;
-              const campsiteLon = campsite.location.longitude;
-              
-              if (!campsiteLat || !campsiteLon) return false;
-        
-              const distance = haversineDistance(latitude, longitude, campsiteLat, campsiteLon);
-              return distance <= 5; // Only include campsites within 5 km radius
-            });
-        
-           return res.json(nearbyCampsites);
-          } catch (error) {
-            console.log("error",error)
-           return res.status(500).json({ error: 'Server error' });
+    getNearByCamsites: async(req, res) => {
+      try {
+          const { latitude, longitude } = req.body;
+      
+          if (!latitude || !longitude) {
+            return res.status(400).json({ error: 'Latitude and longitude are required' });
           }
-    },
-    getRecommendCampsites:async(req,res)=>{
+      
+          // Fetch all campsites
+          const campsites = await Campsites.find({});
+      
+          // Filter campsites within 5 km radius
+          const nearbyCampsites = campsites.filter(campsite => {
+            const campsiteLat = campsite.location.latitude;
+            const campsiteLon = campsite.location.longitude;
+            
+            if (!campsiteLat || !campsiteLon) return false;
+      
+            const distance = haversineDistance(latitude, longitude, campsiteLat, campsiteLon);
+            return distance <= 5; // Only include campsites within 5 km radius
+          });
+  
+          // Assuming 10 campsites per page for pagination purposes
+          const pageSize = 10;
+          const totalPages = Math.ceil(nearbyCampsites.length / pageSize);
+      
+          const formattedResponse = {
+              campsites: nearbyCampsites.slice(0, pageSize), // Return only the first page
+              total: nearbyCampsites.length,
+              pages: totalPages,
+              currentPage: 1
+          };
+      
+         return res.json(formattedResponse);
+        } catch (error) {
+          console.log("error", error)
+         return res.status(500).json({ error: 'Server error' });
+        }
+  },
+  
+    getRecommendCampsites: async (req, res) => {
         try {
-            let userId = req.token._id
-            console.log("oid",userId)
+            let userId = req.token._id;
+            console.log("oid", userId);
             const user = await User.findById(userId);
             if (!user) {
-              return res.status(404).json({ error: 'User not found' });
+                return res.status(404).json({ error: 'User not found' });
             }
-
-          // Check if the recommendation data exists for the user
-    let recommendation = null;
-    if (user.recommendationData && user.recommendationData.length > 0) {
-      // Here, we'll take the latest recommendation or find a specific one (depending on your logic)
-      recommendation = user.recommendationData[user.recommendationData.length - 1]; // Using the latest one
-    }
-
-    // If no recommendation is found, use the values from the body
-    const { string1, string2, campingLocationType } = recommendation
-      ? { string1: recommendation.string1, string2: recommendation.string2, campingLocationType: recommendation.campingLocationType }
-      : req.body;
-            // Breakdown the strings into individual words
+    
+            let recommendation = null;
+            if (user.recommendationData && user.recommendationData.length > 0) {
+                recommendation = user.recommendationData[user.recommendationData.length - 1]; // Using the latest one
+            }
+    
+            const { string1, string2, campingLocationType } = recommendation
+                ? { string1: recommendation.string1, string2: recommendation.string2, campingLocationType: recommendation.campingLocationType }
+                : req.body;
+    
             const wordsFromString1 = breakdownString(string1);
             const wordsFromString2 = breakdownString(string2);
-        console.log("word1",wordsFromString1)
-        console.log("word2",wordsFromString2)
-            // Construct the query to search for any of the words in the document fields
+            console.log("word1", wordsFromString1);
+            console.log("word2", wordsFromString2);
+    
             const campsites = await Campsites.find({
-                campingLocationType, // Match the campingLocationType exactly
-                $and: [ // Both string1 and string2 word matches must be present
-                  {
-                    $or: wordsFromString1.map(word => ({
-                      $or: [
-                        { name: { $regex: word, $options: 'i' } },
-                        { about: { $regex: word, $options: 'i' } },
-                        { phoneNo: { $regex: word, $options: 'i' } },
-                        { email: { $regex: word, $options: 'i' } },
-                        { website: { $regex: word, $options: 'i' } },
-                        { rulesAndRegulations: { $regex: word, $options: 'i' } },
-                        { campsiteType: { $regex: word, $options: 'i' } } // Added campsiteType to the search
-                      ]
-                    }))
-                  },
-                  {
-                    $or: wordsFromString2.map(word => ({
-                      $or: [
-                        { name: { $regex: word, $options: 'i' } },
-                        { about: { $regex: word, $options: 'i' } },
-                        { phoneNo: { $regex: word, $options: 'i' } },
-                        { email: { $regex: word, $options: 'i' } },
-                        { website: { $regex: word, $options: 'i' } },
-                        { rulesAndRegulations: { $regex: word, $options: 'i' } },
-                        { campsiteType: { $regex: word, $options: 'i' } } // Added campsiteType to the search
-                      ]
-                    }))
-                  }
+                campingLocationType,
+                $and: [
+                    {
+                        $or: wordsFromString1.map(word => ({
+                            $or: [
+                                { name: { $regex: word, $options: 'i' } },
+                                { about: { $regex: word, $options: 'i' } },
+                                { phoneNo: { $regex: word, $options: 'i' } },
+                                { email: { $regex: word, $options: 'i' } },
+                                { website: { $regex: word, $options: 'i' } },
+                                { rulesAndRegulations: { $regex: word, $options: 'i' } },
+                                { campsiteType: { $regex: word, $options: 'i' } }
+                            ]
+                        }))
+                    },
+                    {
+                        $or: wordsFromString2.map(word => ({
+                            $or: [
+                                { name: { $regex: word, $options: 'i' } },
+                                { about: { $regex: word, $options: 'i' } },
+                                { phoneNo: { $regex: word, $options: 'i' } },
+                                { email: { $regex: word, $options: 'i' } },
+                                { website: { $regex: word, $options: 'i' } },
+                                { rulesAndRegulations: { $regex: word, $options: 'i' } },
+                                { campsiteType: { $regex: word, $options: 'i' } }
+                            ]
+                        }))
+                    }
                 ]
-              }).populate('amenities')
+            }).populate('amenities')
               .populate('specialFeatures')
               .populate('peopleJoined') // You can specify fields you want to include
               .populate('wishlistUsers');
-          
-        
-            // If no matching campsites found, return a relevant message
+    
             if (!campsites.length) {
-              return res.status(404).json({ message: 'No campsites found matching the criteria.' });
+                return res.status(404).json({ message: 'No campsites found matching the criteria.' });
             }
-        
-            // Check and add matched words to the response
-            const result = campsites.map(campsite => {
-              const matchedWordsString1 = checkMatches(campsite, wordsFromString1);
-              const matchedWordsString2 = checkMatches(campsite, wordsFromString2);
-        
-              return {
-                campsite,
-                matchedWords: {
-                  string1: matchedWordsString1,
-                  string2: matchedWordsString2
-                }
-              };
-            });
-
-      // Check if the search already exists in the user's recommendationData
+    
+            const formattedResponse = {
+                campsites: campsites.map(({ _doc }) => _doc), // Directly use the document data
+                total: campsites.length,
+                pages: Math.ceil(campsites.length / 10), // Adjust the number per page accordingly
+                currentPage: 1 // Adjust based on your pagination logic
+            };
+             // Check if the search already exists in the user's recommendationData
       const existingRecommendation = user.recommendationData.find(recommendation =>
         recommendation.string1 === string1 &&
         recommendation.string2 === string2 &&
@@ -626,13 +625,12 @@ let methods = {
 
     // Save the user with updated recommendationData
     await user.save();
-        
-            // Return the campsites and the matched words
-            res.json(result);
-          } catch (error) {
+           return res.json(formattedResponse);
+        } catch (error) {
             res.status(500).json({ error: 'Server error' });
-          }
+        }
     },
+    
     getTopRatedCampsites: async (req, res) => {
         try {
             // Find and sort by averageRating in descending order, and limit to 3 results
