@@ -6,6 +6,10 @@ var plan = new Schema({
         type: String,
         required: false
     },
+    "title": {
+        type: String,
+        required: true  // Assuming the title is a required field
+    },
     "planName": {
         type: String,
         required: false

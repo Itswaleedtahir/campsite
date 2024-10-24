@@ -13,4 +13,5 @@ router.post('/refundCampsiteBooking',authPolicy,planController.refundCampsiteBoo
 router.post('/getRefundStatus',authPolicy,planController.getRefundStatus)
 router.post("/webhookforBooking",planController.stripetesting)
 router.post('/bookCampsite/:campsiteId',authPolicy,planController.securePayment2)
+router.post('/updatePlan/:id',planController.updatePlan)
 module.exports = router;

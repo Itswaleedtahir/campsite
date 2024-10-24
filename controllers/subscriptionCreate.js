@@ -14,7 +14,27 @@ let methods = {
         await newPlan.save();
         res.status(201).send(newPlan);
     },
-
+    updatePlan:async(req,res)=>{
+        const { id } = req.params;
+        const updateData = {
+            title: req.body.title,
+            priceId: req.body.priceId,
+            planName: req.body.planName,
+            price: req.body.price,
+            duration: req.body.duration,
+            features: req.body.features
+        };
+    
+        try {
+            const updatedPlan = await plan.findByIdAndUpdate(id, updateData, { new: true }); // 'new: true' returns the updated object
+            if (!updatedPlan) {
+                return res.status(404).send({ message: "Plan not found" });
+            }
+          return  res.send(updatedPlan);
+        } catch (error) {
+          return  res.status(500).send({ message: "Error updating the plan", error: error.message });
+        }
+    },
     getSubscriptionForUserFunction: async (req, res) => {
         try {
             let { priceId, email, paymentMethodId, freeTrailDays } = req.body
