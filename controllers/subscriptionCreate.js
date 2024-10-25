@@ -5,6 +5,7 @@ const Refund = require("../models/refund")
 const Affiliate = require("../models/Affiliate")
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/userModel");
+const moment = require('moment');
 
 // (priceId, email, isPreSignup, paymentMethodId)
 let methods = {
@@ -554,31 +555,44 @@ let methods = {
     },
     getCompletedBookingsForUser: async (req, res) => {
         try {
-            let { _id, email } = req.token;
+            const { _id, email } = req.token;
             console.log("data", _id, email);
-
+    
             // Find all completed bookings for the user
             const completedBookings = await Booking.find({
                 userId: _id,
                 status: 'completed'
-            }).populate("userId") // Populate user details (e.g., name, email)
-                .populate("campsiteId");
-
+            })
+            .populate("userId") // Populate user details (e.g., name, email)
+            .populate("campsiteId");
+    
             if (!completedBookings.length) {
                 return res.status(404).send({
                     success: false,
                     message: "No completed bookings found for this user."
                 });
             }
+    
+             // Calculate refund eligibility based on the booking's created date
+        const bookingsWithRefundStatus = completedBookings.map(booking => {
+            const createdAt = moment(booking.createdAt); // Using createdAt as the booking creation date
+            const daysSinceCreation = moment().diff(createdAt, 'days');
+            const refundStatus = daysSinceCreation <= 10; // Check if within 10 days of creation
 
+            return {
+                ...booking.toObject(),
+                refundStatus
+            };
+        });
+    
             return res.status(200).send({
                 success: true,
                 message: "Completed bookings retrieved successfully.",
-                bookings: completedBookings
+                bookings: bookingsWithRefundStatus
             });
         } catch (err) {
             console.log("Error: ", err);
-           return res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: "Internal Server Error"
             });
