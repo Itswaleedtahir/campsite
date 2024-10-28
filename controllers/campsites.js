@@ -594,7 +594,7 @@ let methods = {
               .populate('wishlistUsers');
     
             if (!campsites.length) {
-                return res.status(404).json({ message: 'No campsites found matching the criteria.' });
+                return res.status(400).json({ message: 'No campsites found matching the criteria.' });
             }
     
             const formattedResponse = {
