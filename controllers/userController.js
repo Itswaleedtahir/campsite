@@ -395,7 +395,8 @@ let methods = {
   },
   updateUser: async (req, res) => {
     try {
-        let userId = req.query.id;
+      let _id = req.token._id;
+        let userId = _id;
         console.log("id", userId);
         let data = req.body;
         console.log("data",req.body)

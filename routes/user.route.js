@@ -7,7 +7,7 @@ router.post(`/user-verification`, userController.verifyUser);
 router.post(`/resendOtp`, userController.resendOTP);
 router.get(`/view-user`, userController.viewUser);
 router.get(`/get-user`, userController.getAllUsers);
-router.put(`/update-user`, userController.updateUser);
+router.put(`/update-user`, authPolicy,userController.updateUser);
 router.post(`/login`, userController.loginUser);
 router.post(`/googleVerify`, userController.googleVerify);
 router.post(`/appleLogin`, userController.appleLogin);
