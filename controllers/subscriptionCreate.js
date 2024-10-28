@@ -573,11 +573,11 @@ let methods = {
                 });
             }
     
-             // Calculate refund eligibility based on the booking's created date
-        const bookingsWithRefundStatus = completedBookings.map(booking => {
+         // Calculate refund eligibility based on the booking's created date
+         const bookingsWithRefundStatus = completedBookings.map(booking => {
             const createdAt = moment(booking.createdAt); // Using createdAt as the booking creation date
-            const daysSinceCreation = moment().diff(createdAt, 'days');
-            const refundStatus = daysSinceCreation <= 10; // Check if within 10 days of creation
+            const minutesSinceCreation = moment().diff(createdAt, 'minutes');
+            const refundStatus = minutesSinceCreation <= 10; // Check if within 10 minutes of creation
 
             return {
                 ...booking.toObject(),
