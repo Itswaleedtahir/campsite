@@ -764,6 +764,21 @@ removeFromWishlist: async (req, res) => {
       console.log('Error', error);
      return res.status(500).send({ message: 'Error', error: error.message });
     }
+  },
+  getEmergencyContacts:async(req,res)=>{
+    try {
+      const userId = req.token._id;;
+        const user = await User.findById(userId).select('emergencyContacts -_id');
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        return res.status(200).json(user.emergencyContacts);
+    } catch (error) {
+      console.log("error",error)
+      return res.status(500).send("internal servre error",error)
+    }
   }
 };
 module.exports = methods;
