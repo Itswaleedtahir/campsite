@@ -567,8 +567,8 @@ let methods = {
             .populate("campsiteId");
     
             if (!completedBookings.length) {
-                return res.status(404).send({
-                    success: false,
+                return res.status(200).send({
+                    success: true,
                     message: "No completed bookings found for this user."
                 });
             }

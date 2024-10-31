@@ -10,6 +10,10 @@ var plan = new Schema({
         type: String,
         required: true  // Assuming the title is a required field
     },
+    "subTitle": {
+        type: String,
+        required: true  // Assuming the title is a required field
+    },
     "planName": {
         type: String,
         required: false
@@ -22,7 +26,10 @@ var plan = new Schema({
     },
     "features":{
         type:[String]
-    }
+    },
+    "description":{
+        type:String,
+        }
 });
 
 module.exports = mongoose.model('plan', plan);
