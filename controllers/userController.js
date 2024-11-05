@@ -765,6 +765,30 @@ removeFromWishlist: async (req, res) => {
      return res.status(500).send({ message: 'Error', error: error.message });
     }
   },
+ addEmergencyContact :async (req, res) => {
+  let _id = req.token._id;
+  let userId = _id; // Assume you're getting the user's ID from the URL
+    const { name, phone } = req.body;  // Get the new contact details from the request body
+
+    if (!name || !phone) {
+        return res.status(400).json({ message: "Name and phone are required." });
+    }
+
+    try {
+        // Find the user and update their emergencyContacts array using $push
+        const user = await User.findByIdAndUpdate(userId, {
+            $push: { emergencyContacts: { name, phone } }
+        }, { new: true }).populate('emergencyContacts');  // Option to populate if needed
+
+        if (!user) {
+            return res.status(200).json({ message: "User not found." });
+        }
+
+      return  res.status(200).json({ user });
+    } catch (error) {
+       return res.status(500).json({ message: "Error adding emergency contact", error: error.message });
+    }
+},
   getEmergencyContacts:async(req,res)=>{
     try {
       const userId = req.token._id;;

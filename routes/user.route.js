@@ -23,4 +23,5 @@ router.post(`/removeFromWishlist`,authPolicy,userController.removeFromWishlist)
 router.get(`/getFavourites`,authPolicy,userController.getFavourites)
 router.get(`/getWishlist`,authPolicy,userController.getWishlist)
 router.get(`/getEmergencyContacts`,authPolicy,userController.getEmergencyContacts)
+router.post(`/addEmergencyContact`,authPolicy,userController.addEmergencyContact)
 module.exports = router;
